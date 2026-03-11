@@ -716,21 +716,28 @@ taskInput.addEventListener('keydown', (e) => {
 // ─── VOICE RECOGNITION ───────────────────────────────────────────────────────
 let recognition = null;
 let isListening = false;
+let finalTranscript = '';
 
 const micBtn = document.getElementById('micBtn');
 
-if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+// Chrome requires HTTPS or localhost for speech recognition
+const speechSupported = ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
+const isSecureContext = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:';
+
+if (speechSupported) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SR();
   recognition.lang = 'fi-FI';
-  recognition.continuous = false;
-  recognition.interimResults = true;
+  recognition.continuous = true;       // keep listening until user stops
+  recognition.interimResults = true;   // show words as they come
 
   recognition.onstart = () => {
     isListening = true;
+    finalTranscript = '';
     micBtn.classList.add('active');
     taskInput.classList.add('listening');
     micBtn.textContent = '🔴';
+    taskInput.placeholder = 'Kuuntelen...';
   };
 
   recognition.onend = () => {
@@ -738,22 +745,45 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     micBtn.classList.remove('active');
     taskInput.classList.remove('listening');
     micBtn.textContent = '🎤';
+    taskInput.placeholder = 'Uusi tehtävä... tai paina 🎤';
+    // Put final transcript into field
+    if (finalTranscript) {
+      taskInput.value = finalTranscript;
+      taskInput.style.height = 'auto';
+      taskInput.style.height = taskInput.scrollHeight + 'px';
+    }
   };
 
   recognition.onerror = (e) => {
-    console.warn('Speech error:', e.error);
     isListening = false;
     micBtn.classList.remove('active');
     taskInput.classList.remove('listening');
     micBtn.textContent = '🎤';
+    taskInput.placeholder = 'Uusi tehtävä... tai paina 🎤';
+    if (e.error === 'not-allowed') {
+      showToast('⚠️ Mikrofoni estetty — salli lupa selaimen osoiteriviltä');
+    } else if (e.error === 'no-speech') {
+      showToast('Ei puhetta havaittu, yritä uudelleen');
+    } else if (e.error === 'network') {
+      showToast('⚠️ Verkkovirhe — puheentunnistus vaatii internetyhteyden');
+    } else {
+      showToast('Puhevirhe: ' + e.error);
+    }
+    console.warn('Speech error:', e.error);
   };
 
   recognition.onresult = (e) => {
-    let transcript = '';
+    let interim = '';
+    finalTranscript = '';
     for (let i = 0; i < e.results.length; i++) {
-      transcript += e.results[i][0].transcript;
+      if (e.results[i].isFinal) {
+        finalTranscript += e.results[i][0].transcript;
+      } else {
+        interim += e.results[i][0].transcript;
+      }
     }
-    taskInput.value = transcript;
+    // Show interim results live in the field
+    taskInput.value = finalTranscript + interim;
     taskInput.style.height = 'auto';
     taskInput.style.height = taskInput.scrollHeight + 'px';
   };
@@ -763,12 +793,23 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       recognition.stop();
     } else {
       taskInput.value = '';
-      recognition.start();
+      finalTranscript = '';
+      try {
+        recognition.start();
+      } catch(err) {
+        // Already started or other error
+        recognition.stop();
+        setTimeout(() => recognition.start(), 200);
+      }
     }
   });
+
+  micBtn.title = 'Paina ja puhu tehtävä suomeksi';
 } else {
-  micBtn.title = 'Puheentunnistus ei tuettu tässä selaimessa';
+  micBtn.title = 'Puheentunnistus ei tuettu — käytä Chromea';
   micBtn.style.opacity = '0.3';
+  micBtn.style.cursor = 'not-allowed';
+  micBtn.addEventListener('click', () => showToast('⚠️ Puheentunnistus vaatii Chrome-selaimen'));
 }
 
 // ─── SAVE TASK ───────────────────────────────────────────────────────────────
