@@ -570,7 +570,7 @@
     <div class="task-text-wrap">
       <textarea id="taskInput" rows="1" placeholder="Uusi tehtävä..."></textarea>
     </div>
-    <button class="mic-btn" id="micBtn" onmousedown="startMic()" onmouseup="stopMic()" onmouseleave="stopMic()" ontouchstart="startMic()" ontouchend="stopMic()" ontouchcancel="stopMic()" title="Puhu tehtävä suomeksi">🎤</button>
+    <button class="mic-btn" id="micBtn" onmousedown="startMic()" onmouseup="stopMic()" onmouseleave="stopMic()" ontouchstart="startMic(event)" ontouchend="stopMic()" ontouchcancel="stopMic()" title="Puhu tehtävä suomeksi">🎤</button>
   </div>
   <div class="meta-row">
     <input type="date" id="dueDateInput" title="Eräpäivä">
@@ -718,99 +718,77 @@ taskInput.addEventListener('keydown', (e) => {
   }
 });
 
-// ─── VOICE RECOGNITION ───────────────────────────────────────────────────────
-let recognition = null;
+// ─── VOICE RECOGNITION (ostoslista-pattern: uusi olio joka kerta) ───────────
 let isListening = false;
-let finalTranscript = '';
 
 const micBtn = document.getElementById('micBtn');
-console.log('[mic] button element:', micBtn);
 
-const speechSupported = ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
-console.log('[mic] speechSupported:', speechSupported, '| protocol:', location.protocol);
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
+function resetMicUI() {
+  isListening = false;
+  micBtn.classList.remove('active');
+  taskInput.classList.remove('listening');
+  micBtn.textContent = '🎤';
+  taskInput.placeholder = 'Uusi tehtävä...';
+}
 
-function startMic() {
-  if (!speechSupported) { showToast('⚠️ Puheentunnistus vaatii Chrome-selaimen'); return; }
+function startMic(e) {
+  if (e) e.preventDefault();
   if (isListening) return;
-  taskInput.value = '';
-  finalTranscript = '';
-  try {
-    recognition.start();
-    dbg('start() kutsuttu...');
-  } catch(err) {
-    dbg('start() epäonnistui: ' + err.message);
-    try { recognition.stop(); } catch(e) {}
-    setTimeout(() => { try { recognition.start(); } catch(e) {} }, 400);
+  if (!SpeechRecognition) {
+    showToast('⚠️ Puheentunnistus vaatii Chrome-selaimen');
+    return;
   }
-}
 
-function stopMic() {
-  if (!isListening) return;
-  try { recognition.stop(); } catch(e) {}
-}
+  taskInput.value = '';
 
-// Poistetaan vanha toggleMic — ei enää tarvita
-function toggleMic() {}
+  const rec = new SpeechRecognition();
+  rec.lang = 'fi-FI';
+  rec.interimResults = true;
+  rec.continuous = false;
 
-if (speechSupported) {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  recognition = new SR();
-  recognition.lang = 'fi-FI';
-  recognition.continuous = true;
-  recognition.interimResults = true;
-
-  recognition.onstart = () => {
+  rec.onstart = () => {
     isListening = true;
-    finalTranscript = '';
     micBtn.classList.add('active');
     taskInput.classList.add('listening');
     micBtn.textContent = '🔴';
     taskInput.placeholder = 'Kuuntelen...';
   };
 
-  recognition.onend = () => {
-    // Always ensure UI is reset (catches cases where stopMic wasn't called)
-    resetMicUI();
-    if (finalTranscript && !taskInput.value) {
-      taskInput.value = finalTranscript;
-      taskInput.style.height = 'auto';
-      taskInput.style.height = taskInput.scrollHeight + 'px';
-    }
-  };
-
-  recognition.onerror = (e) => {
-    isListening = false;
-    micBtn.classList.remove('active');
-    taskInput.classList.remove('listening');
-    micBtn.textContent = '🎤';
-    taskInput.placeholder = 'Uusi tehtävä...';
-    if (e.error === 'not-allowed') {
-      showToast('⚠️ Mikrofoni estetty — salli lupa osoiteriviltä');
-    } else if (e.error === 'no-speech') {
-      showToast('Ei puhetta havaittu, yritä uudelleen');
-    } else if (e.error === 'network') {
-      showToast('⚠️ Verkkovirhe — tarkista nettiyhteys');
-    } else {
-      showToast('Virhe: ' + e.error);
-    }
-  };
-
-  recognition.onresult = (e) => {
-    let interim = '';
-    finalTranscript = '';
-    for (let i = 0; i < e.results.length; i++) {
-      if (e.results[i].isFinal) {
-        finalTranscript += e.results[i][0].transcript;
-      } else {
-        interim += e.results[i][0].transcript;
-      }
-    }
-    taskInput.value = finalTranscript + interim;
+  rec.onresult = (e) => {
+    const teksti = Array.from(e.results).map(r => r[0].transcript).join('');
+    taskInput.value = teksti;
     taskInput.style.height = 'auto';
     taskInput.style.height = taskInput.scrollHeight + 'px';
   };
-} else {
+
+  rec.onerror = (e) => {
+    if (e.error === 'not-allowed') showToast('⚠️ Mikrofoni estetty — salli lupa osoiteriviltä');
+    else if (e.error === 'no-speech') showToast('Ei puhetta havaittu, yritä uudelleen');
+    else if (e.error === 'network') showToast('⚠️ Verkkovirhe — tarkista nettiyhteys');
+    else showToast('Virhe: ' + e.error);
+    resetMicUI();
+  };
+
+  rec.onend = () => {
+    resetMicUI();
+  };
+
+  rec.start();
+}
+
+function stopMic() {
+  // UI resetataan onend-callbackissa
+  // Haetaan viimeisin olio DOM:in kautta ei ole tarpeen — rec on closuressa
+  // Merkitään vain että halutaan lopettaa; selain lopettaa continuous=false automaattisesti
+  // Mutta resetoidaan UI heti jotta nappi ei jää punaiseksi
+  resetMicUI();
+}
+
+function toggleMic() {}
+
+if (!SpeechRecognition) {
   micBtn.style.opacity = '0.3';
   micBtn.style.cursor = 'not-allowed';
 }
