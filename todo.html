@@ -536,15 +536,8 @@ function addToGoogleCalendar(task) {
     + '&text=' + encodeURIComponent(task.text)
     + '&dates=' + dates;
 
-  // Open in new tab - must happen synchronously in click handler to avoid Android app intercept
-  const a = document.createElement('a');
-  a.href = url;
-  a.target = '_blank';
-  a.rel = 'noopener noreferrer';
-  // Force browser by adding a query param that calendar app doesn't recognize
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => document.body.removeChild(a), 100);
+  // Open in new tab so Todo stays open
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
