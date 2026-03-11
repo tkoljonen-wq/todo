@@ -845,45 +845,51 @@ function updateDate() {
 function addToGoogleCalendar(task) {
   if (!task.due) { showToast('Aseta ensin eräpäivä'); return; }
 
-  // Build start datetime
+  // Parse date parts directly from string to avoid UTC timezone issues
+  const [yyyy, mm, dd] = task.due.split('-');
+  const pad = n => String(n).padStart(2, '0');
+
   let startDt, endDt;
   if (task.dueTime) {
-    const [h, m] = task.dueTime.split(':').map(Number);
-    const start = new Date(task.due);
-    start.setHours(h, m, 0, 0);
-    const end = new Date(start.getTime() + 30 * 60 * 1000);
-    // Format: YYYYMMDDTHHmmss
-    const fmt = d => d.getFullYear().toString()
-      + String(d.getMonth()+1).padStart(2,'0')
-      + String(d.getDate()).padStart(2,'0')
-      + 'T' + String(d.getHours()).padStart(2,'0')
-      + String(d.getMinutes()).padStart(2,'0') + '00';
-    startDt = fmt(start);
-    endDt = fmt(end);
+    const [hh, mi] = task.dueTime.split(':');
+    // Start: YYYYMMDDTHHmm00
+    startDt = yyyy + mm + dd + 'T' + hh + mi + '00';
+    // End: +30 minutes
+    const totalMin = parseInt(hh) * 60 + parseInt(mi) + 30;
+    const endH = pad(Math.floor(totalMin / 60) % 24);
+    const endM = pad(totalMin % 60);
+    // Handle day overflow
+    let endDate = task.due;
+    if (Math.floor(totalMin / 60) >= 24) {
+      const d = new Date(parseInt(yyyy), parseInt(mm)-1, parseInt(dd) + 1);
+      endDate = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate());
+    } else {
+      endDate = yyyy + mm + dd;
+    }
+    endDt = endDate + 'T' + endH + endM + '00';
   } else {
-    // All-day event
-    const d = task.due.replace(/-/g, '');
-    // End date = next day for all-day
-    const next = new Date(task.due);
-    next.setDate(next.getDate() + 1);
-    const nd = next.toISOString().split('T')[0].replace(/-/g, '');
-    startDt = d;
-    endDt = nd;
+    // All-day: YYYYMMDD / next day YYYYMMDD
+    startDt = yyyy + mm + dd;
+    const next = new Date(parseInt(yyyy), parseInt(mm)-1, parseInt(dd) + 1);
+    endDt = next.getFullYear() + pad(next.getMonth()+1) + pad(next.getDate());
   }
 
-  const params = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: task.text,
-    dates: startDt + '/' + endDt,
-    details: 'Lisätty Todo-sovelluksesta',
-  });
+  // Build URL manually to avoid URLSearchParams encoding issues with Google Calendar
+  const title = encodeURIComponent(task.text);
+  const dates = startDt + '%2F' + endDt;
+  const details = encodeURIComponent('Lisätty Todo-sovelluksesta');
 
-  // Add reminders (Google Calendar supports multiple 'add' params in minutes)
+  let url = 'https://calendar.google.com/calendar/r/eventedit'
+    + '?action=TEMPLATE'
+    + '&text=' + title
+    + '&dates=' + dates
+    + '&details=' + details;
+
+  // Reminders in minutes
   if (task.reminders && task.reminders.length > 0) {
-    task.reminders.forEach(m => params.append('add', m));
+    task.reminders.forEach(m => { url += '&add=' + m; });
   }
 
-  const url = 'https://calendar.google.com/calendar/r/eventedit?' + params.toString();
   window.open(url, '_blank');
 }
 
