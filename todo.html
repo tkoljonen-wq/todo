@@ -563,10 +563,10 @@
   <span class="date" id="headerDate"></span>
 </header>
 
-<div id="notifBanner" style="display:none;align-items:center;gap:12px;background:#1a2a1a;border-bottom:1px solid #3a5a3a;padding:10px 16px;font-family:'DM Mono',monospace;font-size:13px;color:#8ec88e;flex-wrap:wrap;">
-  <span>🔔 Salli ilmoitukset niin saat muistutukset myös kun ohjelma on taustalla</span>
-  <button onclick="requestNotifPermission()" style="background:#6ec88a;color:#0a1a0f;border:none;font-family:'DM Mono',monospace;font-size:12px;padding:6px 16px;border-radius:3px;cursor:pointer;font-weight:600;">Salli ilmoitukset</button>
-  <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:#666;cursor:pointer;font-size:20px;line-height:1;padding:0 4px;margin-left:auto;">×</button>
+<div id="notifBanner" style="display:none;align-items:center;gap:10px;background:#1a2a1a;border-bottom:1px solid #3a5a3a;padding:10px 16px;font-family:'DM Mono',monospace;font-size:13px;color:#8ec88e;flex-wrap:wrap;">
+  <span id="notifBannerText">🔔 Salli ilmoitukset niin saat muistutukset myös taustalla</span>
+  <button id="notifBannerBtn" onclick="requestNotifPermission()" style="background:#6ec88a;color:#0a1a0f;border:none;font-family:'DM Mono',monospace;font-size:12px;padding:6px 16px;border-radius:3px;cursor:pointer;font-weight:600;white-space:nowrap;">Salli ilmoitukset</button>
+  <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:#555;cursor:pointer;font-size:22px;line-height:1;padding:0 4px;margin-left:auto;">×</button>
 </div>
 
 <div class="input-area">
@@ -1079,7 +1079,8 @@ function snooze(minutes) {
 // ─── NOTIFICATION PERMISSION ─────────────────────────────────────────────────
 function checkNotifPermission() {
   if (!('Notification' in window)) return;
-  if (Notification.permission === 'default') {
+  // Show banner unless already granted
+  if (Notification.permission !== 'granted') {
     showNotifBanner();
   }
 }
@@ -1090,13 +1091,34 @@ function showNotifBanner() {
 }
 
 function requestNotifPermission() {
+  if (!('Notification' in window)) {
+    showToast('⚠️ Selain ei tue ilmoituksia');
+    return;
+  }
+  if (Notification.permission === 'denied') {
+    // Can't request again - show instructions
+    document.getElementById('notifBannerText').textContent = '⚠️ Ilmoitukset estetty — avaa Chromen sivuasetukset ja salli ilmoitukset tälle sivulle';
+    document.getElementById('notifBannerBtn').textContent = 'Avaa asetukset';
+    document.getElementById('notifBannerBtn').onclick = () => {
+      showToast('Paina 🔒 osoiteriviltä → Sivuston asetukset → Ilmoitukset → Salli');
+    };
+    return;
+  }
   Notification.requestPermission().then(perm => {
-    const banner = document.getElementById('notifBanner');
-    if (banner) banner.style.display = 'none';
     if (perm === 'granted') {
-      showToast('✅ Ilmoituslupa myönnetty — muistutukset toimivat!');
+      document.getElementById('notifBanner').style.display = 'none';
+      registerSW();
+      showToast('✅ Ilmoitukset sallittu!');
+      // Send a test notification immediately
+      setTimeout(() => {
+        new Notification('✅ Todo-ilmoitukset toimivat!', {
+          body: 'Saat muistutukset nyt myös taustalla.',
+          tag: 'test'
+        });
+      }, 500);
     } else {
-      showToast('⚠️ Ilmoituslupa evätty — muistutukset näkyvät vain kun sivu on auki');
+      document.getElementById('notifBannerText').textContent = '⚠️ Lupa evätty — paina 🔒 osoiteriviltä ja salli ilmoitukset';
+      document.getElementById('notifBannerBtn').style.display = 'none';
     }
   });
 }
@@ -1114,7 +1136,7 @@ let swRegistration = null;
 async function registerSW() {
   if (!('serviceWorker' in navigator)) return;
   try {
-    swRegistration = await navigator.serviceWorker.register('sw.js');
+    swRegistration = await navigator.serviceWorker.register('./sw.js');
     console.log('SW registered');
   } catch(e) {
     console.warn('SW registration failed:', e);
