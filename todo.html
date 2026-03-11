@@ -869,6 +869,7 @@ function addToGoogleCalendar(task) {
     task.reminders.forEach(m => { url += '&add=' + m; });
   }
 
+  alert(url);
   window.open(url, '_blank');
 }
 
