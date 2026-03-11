@@ -147,98 +147,6 @@
     cursor: pointer;
   }
 
-  /* REMINDER */
-  .reminder-wrap {
-    position: relative;
-  }
-
-  .reminder-trigger {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    padding: 0.5rem 0.7rem;
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-  }
-
-  .reminder-trigger:hover { border-color: var(--muted); }
-  .reminder-trigger.has-reminders { border-color: var(--green); color: var(--green); }
-
-  .reminder-panel {
-    display: none;
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 1rem;
-    min-width: 280px;
-    z-index: 100;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-  }
-
-  .reminder-panel.open { display: block; }
-
-  .reminder-panel h4 {
-    color: var(--muted);
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.75rem;
-  }
-
-  .reminder-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; }
-
-  .reminder-item {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-  }
-
-  .reminder-item select {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    padding: 0.35rem 0.5rem;
-    border-radius: 3px;
-    outline: none;
-    flex: 1;
-    cursor: pointer;
-  }
-
-  .remove-reminder {
-    background: none;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 16px;
-    padding: 0 4px;
-    line-height: 1;
-  }
-  .remove-reminder:hover { color: var(--red); }
-
-  .add-reminder-btn {
-    background: none;
-    border: 1px dashed var(--border);
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    padding: 0.35rem 0.7rem;
-    border-radius: 3px;
-    cursor: pointer;
-    width: 100%;
-  }
-  .add-reminder-btn:hover { border-color: var(--muted); color: var(--text); }
-
   /* SAVE BUTTONS */
   .save-btns {
     display: flex;
@@ -431,120 +339,19 @@
   .task-item:hover .delete-btn { color: var(--muted); }
   .delete-btn:hover { color: var(--red) !important; }
 
-  /* NOTIFICATION TOAST */
-  #toast {
-    position: fixed;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%) translateY(100px);
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    padding: 0.75rem 1.5rem;
-    border-radius: 6px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-    transition: transform 0.3s ease;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    max-width: 400px;
-    text-align: center;
-  }
-
-  #toast.show { transform: translateX(-50%) translateY(0); }
-  #toast.reminder { border-color: var(--green); }
-
-  /* REMINDER NOTIFICATION */
-  .notif-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    z-index: 500;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .notif-overlay.open { display: flex; }
-
-  .notif-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 2rem;
-    max-width: 380px;
-    width: 90%;
-    box-shadow: 0 16px 64px rgba(0,0,0,0.7);
-  }
-
-  .notif-box h3 {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.3rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .notif-box p {
-    color: var(--muted);
-    font-size: 12px;
-    margin-bottom: 1.2rem;
-    line-height: 1.6;
-  }
-
-  .notif-actions {
-    display: flex;
-    gap: 0.6rem;
-    flex-wrap: wrap;
-  }
-
-  .notif-dismiss {
-    background: var(--green);
-    color: #0a1a0f;
-    border: none;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    padding: 0.6rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-  }
-
-  .notif-snooze {
-    background: var(--surface);
-    color: var(--text);
-    border: 1px solid var(--border);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    padding: 0.6rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  .notif-snooze:hover { border-color: var(--muted); }
-
-  .snooze-opts {
-    display: none;
-    margin-top: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-
-  .snooze-opt {
+  .cal-btn {
+    font-size: 11px;
     background: none;
     border: 1px solid var(--border);
     color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    padding: 0.4rem 0.7rem;
     border-radius: 3px;
+    padding: 2px 7px;
     cursor: pointer;
-    text-align: left;
+    font-family: 'DM Mono', monospace;
+    transition: all 0.15s;
+    white-space: nowrap;
   }
-
-  .snooze-opt:hover { border-color: var(--muted); color: var(--text); }
+  .cal-btn:hover { border-color: #4285f4; color: #4285f4; }
 
   .empty-list {
     color: var(--muted);
@@ -563,11 +370,6 @@
   <span class="date" id="headerDate"></span>
 </header>
 
-<div id="notifBanner" style="display:none;align-items:center;gap:10px;background:#1a2a1a;border-bottom:1px solid #3a5a3a;padding:10px 16px;font-family:'DM Mono',monospace;font-size:13px;color:#8ec88e;flex-wrap:wrap;">
-  <span id="notifBannerText">🔔 Salli ilmoitukset niin saat muistutukset myös taustalla</span>
-  <button id="notifBannerBtn" onclick="requestNotifPermission()" style="background:#6ec88a;color:#0a1a0f;border:none;font-family:'DM Mono',monospace;font-size:12px;padding:6px 16px;border-radius:3px;cursor:pointer;font-weight:600;white-space:nowrap;">Salli ilmoitukset</button>
-  <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:#555;cursor:pointer;font-size:22px;line-height:1;padding:0 4px;margin-left:auto;">×</button>
-</div>
 
 <div class="input-area">
   <div class="task-row">
@@ -579,14 +381,7 @@
   <div class="meta-row">
     <input type="date" id="dueDateInput" title="Eräpäivä">
     <input type="time" id="dueTimeInput" title="Kellonaika" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:0.5rem 0.7rem;border-radius:4px;outline:none;cursor:pointer;" >
-    <div class="reminder-wrap" id="reminderWrap">
-      <button class="reminder-trigger" id="reminderTrigger">🔔 Muistutukset</button>
-      <div class="reminder-panel" id="reminderPanel">
-        <h4>Muistutukset</h4>
-        <div class="reminder-list" id="reminderList"></div>
-        <button class="add-reminder-btn" id="addReminderBtn">+ Lisää muistutus</button>
-      </div>
-    </div>
+
     <div class="save-btns">
       <button class="btn-civil" id="saveCivilBtn">💙 Siviili</button>
       <button class="btn-work" id="saveWorkBtn">🟡 Työ</button>
@@ -613,20 +408,6 @@
 
 <div id="toast">⚡</div>
 
-<!-- Reminder notification overlay -->
-<div class="notif-overlay" id="notifOverlay">
-  <div class="notif-box">
-    <h3 id="notifTitle">Muistutus</h3>
-    <p id="notifBody"></p>
-    <div class="notif-actions">
-      <button class="notif-dismiss" id="notifDismiss">✓ Kuittaa</button>
-      <button class="notif-snooze" id="notifSnoozeBtn">💤 Torkuta</button>
-    </div>
-    <div class="snooze-opts" id="snoozeOpts">
-      <button class="snooze-opt" onclick="snooze(15)">15 min</button>
-      <button class="snooze-opt" onclick="snooze(60)">1 tunti</button>
-      <button class="snooze-opt" onclick="snooze(60*24)">1 päivä</button>
-    </div>
   </div>
 </div>
 
@@ -634,7 +415,6 @@
 // ─── DATA ────────────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'todo_v2';
 let data = { civil: [], work: [] };
-let currentNotif = null;
 
 function load() {
   try {
@@ -645,66 +425,6 @@ function load() {
 
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-// ─── REMINDER OPTIONS ────────────────────────────────────────────────────────
-const REMINDER_OPTS = [
-  { value: 0,       label: 'Eräpäivänä' },
-  { value: 60,      label: '1 tunti ennen' },
-  { value: 60*3,    label: '3 tuntia ennen' },
-  { value: 60*24,   label: '1 päivä ennen' },
-  { value: 60*24*2, label: '2 päivää ennen' },
-  { value: 60*24*3, label: '3 päivää ennen' },
-  { value: 60*24*7, label: '1 viikko ennen' },
-];
-
-// ─── REMINDER UI ─────────────────────────────────────────────────────────────
-let pendingReminders = [];
-
-document.getElementById('reminderTrigger').addEventListener('click', (e) => {
-  e.stopPropagation();
-  document.getElementById('reminderPanel').classList.toggle('open');
-});
-
-document.addEventListener('click', (e) => {
-  if (!document.getElementById('reminderWrap').contains(e.target)) {
-    document.getElementById('reminderPanel').classList.remove('open');
-  }
-});
-
-document.getElementById('addReminderBtn').addEventListener('click', () => {
-  pendingReminders.push(60 * 24); // default 1 day
-  renderReminderInputs();
-});
-
-function renderReminderInputs() {
-  const list = document.getElementById('reminderList');
-  list.innerHTML = '';
-  pendingReminders.forEach((val, i) => {
-    const row = document.createElement('div');
-    row.className = 'reminder-item';
-    const sel = document.createElement('select');
-    REMINDER_OPTS.forEach(o => {
-      const opt = document.createElement('option');
-      opt.value = o.value;
-      opt.textContent = o.label;
-      if (o.value === val) opt.selected = true;
-      sel.appendChild(opt);
-    });
-    sel.addEventListener('change', () => { pendingReminders[i] = parseInt(sel.value); });
-    const rm = document.createElement('button');
-    rm.className = 'remove-reminder';
-    rm.textContent = '×';
-    rm.addEventListener('click', () => { pendingReminders.splice(i, 1); renderReminderInputs(); });
-    row.appendChild(sel);
-    row.appendChild(rm);
-    list.appendChild(row);
-  });
-  const trigger = document.getElementById('reminderTrigger');
-  trigger.classList.toggle('has-reminders', pendingReminders.length > 0);
-  trigger.textContent = pendingReminders.length > 0
-    ? `🔔 ${pendingReminders.length} muistutus${pendingReminders.length > 1 ? 'ta' : ''}`
-    : '🔔 Muistutukset';
 }
 
 // ─── TASK INPUT AUTO-RESIZE ───────────────────────────────────────────────────
@@ -804,8 +524,6 @@ function getTaskInput() {
     text: taskInput.value.trim(),
     due: document.getElementById('dueDateInput').value,
     dueTime: document.getElementById('dueTimeInput').value,
-    reminders: [...pendingReminders],
-    snoozedReminders: {},
     done: false,
     created: Date.now(),
   };
@@ -816,9 +534,6 @@ function resetForm() {
   taskInput.style.height = 'auto';
   document.getElementById('dueDateInput').value = '';
   document.getElementById('dueTimeInput').value = '';
-  pendingReminders = [];
-  renderReminderInputs();
-  document.getElementById('reminderPanel').classList.remove('open');
 }
 
 document.getElementById('saveCivilBtn').addEventListener('click', () => saveTask('civil'));
@@ -898,29 +613,27 @@ function renderList(listName) {
     item.appendChild(del);
 
     // Meta row
-    const hasDue = task.due;
-    const hasReminders = task.reminders && task.reminders.length > 0;
-
-    if (hasDue || hasReminders) {
+    if (task.due) {
       const meta = document.createElement('div');
       meta.className = 'task-meta';
 
-      if (hasDue) {
-        const d = formatDue(task.due, task);
-        if (d) {
-          const dueEl = document.createElement('span');
-          dueEl.className = d.cls;
-          dueEl.textContent = d.text;
-          meta.appendChild(dueEl);
-        }
+      const d = formatDue(task.due, task);
+      if (d) {
+        const dueEl = document.createElement('span');
+        dueEl.className = d.cls;
+        dueEl.textContent = d.text;
+        meta.appendChild(dueEl);
       }
 
-      if (hasReminders) {
-        const remEl = document.createElement('span');
-        remEl.className = 'task-reminders';
-        remEl.textContent = `🔔 ${task.reminders.length} muistutus${task.reminders.length > 1 ? 'ta' : ''}`;
-        meta.appendChild(remEl);
-      }
+      // Google Calendar button
+      const calBtn = document.createElement('button');
+      calBtn.className = 'cal-btn';
+      calBtn.textContent = '📅 Lisää kalenteriin';
+      calBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        addToGoogleCalendar(task);
+      });
+      meta.appendChild(calBtn);
 
       item.appendChild(meta);
     }
@@ -970,159 +683,6 @@ function showToast(msg, isReminder = false) {
   toastTimer = setTimeout(() => { t.className = ''; }, 3000);
 }
 
-// ─── REMINDER CHECKING ────────────────────────────────────────────────────────
-function getDueMs(task) {
-  if (task.dueTime) {
-    const [h, m] = task.dueTime.split(':').map(Number);
-    const d = new Date(task.due);
-    d.setHours(h, m, 0, 0);
-    return d.getTime();
-  }
-  return new Date(task.due + 'T09:00:00').getTime();
-}
-
-function checkReminders() {
-  const now = Date.now();
-  const lists = ['civil', 'work'];
-
-  for (const listName of lists) {
-    for (const task of data[listName]) {
-      if (task.done || !task.due || !task.reminders || task.reminders.length === 0) continue;
-
-      const dueMs = getDueMs(task);
-      if (!task.firedReminders) task.firedReminders = {};
-
-      for (const minutesBefore of task.reminders) {
-        const fireAt = dueMs - minutesBefore * 60 * 1000;
-        const key = task.id + '_' + minutesBefore;
-
-        // Snooze overrides fireAt
-        const snoozedUntil = task.snoozedReminders && task.snoozedReminders[key];
-        const effectiveFire = snoozedUntil ? snoozedUntil : fireAt;
-
-        const alreadyFired = task.firedReminders[key];
-        const inWindow = now >= effectiveFire && now < effectiveFire + 60 * 60 * 1000;
-
-        if (!alreadyFired && inWindow) {
-          task.firedReminders[key] = now;
-          save();
-          const taskCopy = {...task, list: listName};
-          triggerNotif(taskCopy, minutesBefore, key);
-          scheduleNativeNotif(taskCopy, minutesBefore, effectiveFire);
-          return; // yksi kerrallaan
-        }
-      }
-    }
-  }
-}
-
-function triggerNotif(task, minutesBefore, key) {
-  currentNotif = { task, minutesBefore, key };
-  const opt = REMINDER_OPTS.find(o => o.value === minutesBefore);
-  const dueStr = task.due
-    ? new Intl.DateTimeFormat('fi-FI').format(new Date(task.due)) + (task.dueTime ? ' klo ' + task.dueTime : '')
-    : '';
-  const body = task.text + (dueStr ? '\nEräpäivä: ' + dueStr : '');
-  document.getElementById('notifTitle').textContent = '🔔 ' + (opt ? opt.label : 'Muistutus');
-  document.getElementById('notifBody').textContent = body;
-  document.getElementById('notifOverlay').classList.add('open');
-  document.getElementById('snoozeOpts').style.display = 'none';
-
-  if (Notification.permission === 'granted') {
-    new Notification('📋 ' + task.text, { body: dueStr, icon: '' });
-  } else if (Notification.permission === 'default') {
-    Notification.requestPermission();
-  }
-}
-
-document.getElementById('notifDismiss').addEventListener('click', () => {
-  closeNotif();
-});
-
-function closeNotif() {
-  document.getElementById('notifOverlay').classList.remove('open');
-  document.getElementById('snoozeOpts').style.display = 'none';
-  currentNotif = null;
-}
-
-// Also close on backdrop click
-document.getElementById('notifOverlay').addEventListener('click', (e) => {
-  if (e.target === document.getElementById('notifOverlay')) closeNotif();
-});
-
-document.getElementById('notifSnoozeBtn').addEventListener('click', () => {
-  const s = document.getElementById('snoozeOpts');
-  s.style.display = s.style.display === 'none' ? 'flex' : 'none';
-});
-
-function snooze(minutes) {
-  if (!currentNotif) return;
-  const { task, key } = currentNotif;
-
-  const listName = data.civil.find(t => t.id === task.id) ? 'civil' : 'work';
-  const listTask = data[listName].find(t => t.id === task.id);
-
-  if (listTask) {
-    if (!listTask.snoozedReminders) listTask.snoozedReminders = {};
-    if (!listTask.firedReminders) listTask.firedReminders = {};
-    listTask.snoozedReminders[key] = Date.now() + minutes * 60 * 1000;
-    delete listTask.firedReminders[key]; // allow re-fire after snooze
-    save();
-  }
-
-  document.getElementById('notifOverlay').classList.remove('open');
-  currentNotif = null;
-  const label = minutes < 60 ? minutes + ' min' : minutes < 60*24 ? (minutes/60) + ' h' : '1 pv';
-  showToast('💤 Torkutettu ' + label);
-}
-
-// ─── NOTIFICATION PERMISSION ─────────────────────────────────────────────────
-function checkNotifPermission() {
-  if (!('Notification' in window)) return;
-  // Show banner unless already granted
-  if (Notification.permission !== 'granted') {
-    showNotifBanner();
-  }
-}
-
-function showNotifBanner() {
-  const banner = document.getElementById('notifBanner');
-  if (banner) banner.style.display = 'flex';
-}
-
-function requestNotifPermission() {
-  if (!('Notification' in window)) {
-    showToast('⚠️ Selain ei tue ilmoituksia');
-    return;
-  }
-  if (Notification.permission === 'denied') {
-    // Can't request again - show instructions
-    document.getElementById('notifBannerText').textContent = '⚠️ Ilmoitukset estetty — avaa Chromen sivuasetukset ja salli ilmoitukset tälle sivulle';
-    document.getElementById('notifBannerBtn').textContent = 'Avaa asetukset';
-    document.getElementById('notifBannerBtn').onclick = () => {
-      showToast('Paina 🔒 osoiteriviltä → Sivuston asetukset → Ilmoitukset → Salli');
-    };
-    return;
-  }
-  Notification.requestPermission().then(perm => {
-    if (perm === 'granted') {
-      document.getElementById('notifBanner').style.display = 'none';
-      registerSW();
-      showToast('✅ Ilmoitukset sallittu!');
-      // Send a test notification immediately
-      setTimeout(() => {
-        new Notification('✅ Todo-ilmoitukset toimivat!', {
-          body: 'Saat muistutukset nyt myös taustalla.',
-          tag: 'test'
-        });
-      }, 500);
-    } else {
-      document.getElementById('notifBannerText').textContent = '⚠️ Lupa evätty — paina 🔒 osoiteriviltä ja salli ilmoitukset';
-      document.getElementById('notifBannerBtn').style.display = 'none';
-    }
-  });
-}
-
 // ─── DATE HEADER ─────────────────────────────────────────────────────────────
 function updateDate() {
   const now = new Date();
@@ -1130,42 +690,51 @@ function updateDate() {
     new Intl.DateTimeFormat('fi-FI', { weekday:'long', day:'numeric', month:'long', year:'numeric' }).format(now);
 }
 
-// ─── SERVICE WORKER ──────────────────────────────────────────────────────────
-let swRegistration = null;
+// ─── GOOGLE CALENDAR ─────────────────────────────────────────────────────────
+function addToGoogleCalendar(task) {
+  if (!task.due) { showToast('Aseta ensin eräpäivä'); return; }
 
-async function registerSW() {
-  if (!('serviceWorker' in navigator)) return;
-  try {
-    swRegistration = await navigator.serviceWorker.register('./sw.js');
-    console.log('SW registered');
-  } catch(e) {
-    console.warn('SW registration failed:', e);
+  // Build start datetime
+  let startDt, endDt;
+  if (task.dueTime) {
+    const [h, m] = task.dueTime.split(':').map(Number);
+    const start = new Date(task.due);
+    start.setHours(h, m, 0, 0);
+    const end = new Date(start.getTime() + 30 * 60 * 1000);
+    // Format: YYYYMMDDTHHmmss
+    const fmt = d => d.getFullYear().toString()
+      + String(d.getMonth()+1).padStart(2,'0')
+      + String(d.getDate()).padStart(2,'0')
+      + 'T' + String(d.getHours()).padStart(2,'0')
+      + String(d.getMinutes()).padStart(2,'0') + '00';
+    startDt = fmt(start);
+    endDt = fmt(end);
+  } else {
+    // All-day event
+    const d = task.due.replace(/-/g, '');
+    // End date = next day for all-day
+    const next = new Date(task.due);
+    next.setDate(next.getDate() + 1);
+    const nd = next.toISOString().split('T')[0].replace(/-/g, '');
+    startDt = d;
+    endDt = nd;
   }
-}
 
-function scheduleNativeNotif(task, minutesBefore, fireAt) {
-  if (!swRegistration || Notification.permission !== 'granted') return;
-  const dueStr = task.due
-    ? new Intl.DateTimeFormat('fi-FI').format(new Date(task.due)) + (task.dueTime ? ' klo ' + task.dueTime : '')
-    : '';
-  const opt = REMINDER_OPTS.find(o => o.value === minutesBefore);
-  swRegistration.active?.postMessage({
-    type: 'SCHEDULE_NOTIFICATION',
-    title: '📋 ' + task.text,
-    body: opt ? opt.label + (dueStr ? ' — ' + dueStr : '') : dueStr,
-    fireAt,
-    tag: task.id + '_' + minutesBefore
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: task.text,
+    dates: startDt + '/' + endDt,
+    details: 'Lisätty Todo-sovelluksesta',
   });
+
+  const url = 'https://calendar.google.com/calendar/render?' + params.toString();
+  window.open(url, '_blank');
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 load();
 updateDate();
 render();
-registerSW();
-setInterval(checkReminders, 60 * 1000);
-checkReminders();
-checkNotifPermission();
 
 // Set min date for due date picker
 document.getElementById('dueDateInput').min = new Date().toISOString().split('T')[0];
