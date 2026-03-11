@@ -564,6 +564,11 @@
   <button onclick="testReminder()" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;padding:0.3rem 0.7rem;border-radius:3px;cursor:pointer;" title="Testaa muistutus">🔔 testi</button>
 </header>
 
+<div id="notifBanner" style="display:none;align-items:center;gap:12px;background:#1a2a1a;border-bottom:1px solid #3a5a3a;padding:10px 16px;font-family:'DM Mono',monospace;font-size:13px;color:#8ec88e;flex-wrap:wrap;">
+  <span>🔔 Salli ilmoitukset niin muistutukset toimivat myös taustalla</span>
+  <button onclick="requestNotifPermission()" style="background:#6ec88a;color:#0a1a0f;border:none;font-family:'DM Mono',monospace;font-size:12px;padding:6px 16px;border-radius:3px;cursor:pointer;font-weight:600;">Salli ilmoitukset</button>
+  <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:#666;cursor:pointer;font-size:20px;line-height:1;padding:0 4px;margin-left:auto;">×</button>
+</div>
 
 <div class="input-area">
   <div class="task-row">
@@ -1030,8 +1035,18 @@ function triggerNotif(task, minutesBefore, key) {
 }
 
 document.getElementById('notifDismiss').addEventListener('click', () => {
+  closeNotif();
+});
+
+function closeNotif() {
   document.getElementById('notifOverlay').classList.remove('open');
+  document.getElementById('snoozeOpts').style.display = 'none';
   currentNotif = null;
+}
+
+// Also close on backdrop click
+document.getElementById('notifOverlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('notifOverlay')) closeNotif();
 });
 
 document.getElementById('notifSnoozeBtn').addEventListener('click', () => {
