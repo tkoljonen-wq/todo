@@ -876,7 +876,7 @@ function addToGoogleCalendar(task) {
 
   // Build URL manually to avoid URLSearchParams encoding issues with Google Calendar
   const title = encodeURIComponent(task.text);
-  const dates = startDt + '%2F' + endDt;
+  const dates = startDt + '/' + endDt;
   const details = encodeURIComponent('Lisätty Todo-sovelluksesta');
 
   let url = 'https://calendar.google.com/calendar/r/eventedit'
@@ -890,8 +890,6 @@ function addToGoogleCalendar(task) {
     task.reminders.forEach(m => { url += '&add=' + m; });
   }
 
-  // DEBUG: show URL before opening
-  if (!confirm('Avataanko kalenteri?\n\n' + url)) return;
   window.open(url, '_blank');
 }
 
