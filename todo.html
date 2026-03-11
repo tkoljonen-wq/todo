@@ -862,7 +862,7 @@ function addToGoogleCalendar(task) {
     dates = yyyy+mm+dd + '/' + next.getFullYear()+pad(next.getMonth()+1)+pad(next.getDate());
   }
 
-  let url = 'https://calendar.google.com/calendar/r/eventedit?action=TEMPLATE';
+  let url = 'https://www.google.com/calendar/render?action=TEMPLATE';
   url += '&text=' + encodeURIComponent(task.text);
   url += '&dates=' + dates;
   if (task.reminders && task.reminders.length > 0) {
