@@ -71,7 +71,6 @@
   .task-text-wrap {
     flex: 1;
     min-width: 200px;
-    position: relative;
   }
 
   #taskInput {
@@ -81,7 +80,7 @@
     color: var(--text);
     font-family: 'DM Mono', monospace;
     font-size: 14px;
-    padding: 0.7rem 2.5rem 0.7rem 0.9rem;
+    padding: 0.7rem 0.9rem;
     border-radius: 4px;
     outline: none;
     resize: none;
@@ -103,21 +102,24 @@
   }
 
   .mic-btn {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
     cursor: pointer;
     color: var(--muted);
-    font-size: 16px;
-    padding: 4px;
-    transition: color 0.2s;
+    font-size: 20px;
+    padding: 0 12px;
+    min-height: 44px;
+    min-width: 48px;
+    transition: color 0.2s, border-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
   }
 
-  .mic-btn:hover { color: var(--text); }
-  .mic-btn.active { color: var(--red); }
+  .mic-btn:hover { color: var(--text); border-color: var(--muted); }
+  .mic-btn.active { color: var(--red); border-color: var(--red); }
 
   .meta-row {
     display: flex;
@@ -564,9 +566,9 @@
 <div class="input-area">
   <div class="task-row">
     <div class="task-text-wrap">
-      <textarea id="taskInput" rows="1" placeholder="Uusi tehtävä... tai paina 🎤"></textarea>
-      <button class="mic-btn" id="micBtn" title="Puhu tehtävä">🎤</button>
+      <textarea id="taskInput" rows="1" placeholder="Uusi tehtävä..."></textarea>
     </div>
+    <button class="mic-btn" id="micBtn" title="Puhu tehtävä suomeksi">🎤</button>
   </div>
   <div class="meta-row">
     <input type="date" id="dueDateInput" title="Eräpäivä">
