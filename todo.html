@@ -561,7 +561,6 @@
 <header>
   <h1>Todo</h1>
   <span class="date" id="headerDate"></span>
-  <button onclick="testReminder()" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;padding:0.3rem 0.7rem;border-radius:3px;cursor:pointer;" title="Testaa muistutus">🔔 testi</button>
 </header>
 
 <div id="notifBanner" style="display:none;align-items:center;gap:12px;background:#1a2a1a;border-bottom:1px solid #3a5a3a;padding:10px 16px;font-family:'DM Mono',monospace;font-size:13px;color:#8ec88e;flex-wrap:wrap;">
@@ -984,32 +983,32 @@ function getDueMs(task) {
 
 function checkReminders() {
   const now = Date.now();
-  const allTasks = [
-    ...data.civil.map(t => ({...t, list:'civil'})),
-    ...data.work.map(t => ({...t, list:'work'}))
-  ];
+  const lists = ['civil', 'work'];
 
-  for (const task of allTasks) {
-    if (task.done || !task.due || !task.reminders || task.reminders.length === 0) continue;
+  for (const listName of lists) {
+    for (const task of data[listName]) {
+      if (task.done || !task.due || !task.reminders || task.reminders.length === 0) continue;
 
-    const dueMs = getDueMs(task);
+      const dueMs = getDueMs(task);
+      if (!task.firedReminders) task.firedReminders = {};
 
-    for (const minutesBefore of task.reminders) {
-      const fireAt = dueMs - minutesBefore * 60 * 1000;
-      const key = task.id + '_' + minutesBefore;
+      for (const minutesBefore of task.reminders) {
+        const fireAt = dueMs - minutesBefore * 60 * 1000;
+        const key = task.id + '_' + minutesBefore;
 
-      // Snooze check
-      const snoozedUntil = task.snoozedReminders && task.snoozedReminders[key];
-      const effectiveFire = snoozedUntil || fireAt;
+        // Snooze overrides fireAt
+        const snoozedUntil = task.snoozedReminders && task.snoozedReminders[key];
+        const effectiveFire = snoozedUntil ? snoozedUntil : fireAt;
 
-      // Fire if we're within a 10-minute window after scheduled time
-      const fired = localStorage.getItem('fired_' + key);
-      const inWindow = now >= effectiveFire && now < effectiveFire + 10 * 60 * 1000;
+        const alreadyFired = task.firedReminders[key];
+        const inWindow = now >= effectiveFire && now < effectiveFire + 60 * 60 * 1000;
 
-      if (!fired && inWindow) {
-        localStorage.setItem('fired_' + key, String(now));
-        triggerNotif(task, minutesBefore, key);
-        return; // one at a time
+        if (!alreadyFired && inWindow) {
+          task.firedReminders[key] = now;
+          save();
+          triggerNotif({...task, list: listName}, minutesBefore, key);
+          return; // yksi kerrallaan
+        }
       }
     }
   }
@@ -1063,8 +1062,9 @@ function snooze(minutes) {
 
   if (listTask) {
     if (!listTask.snoozedReminders) listTask.snoozedReminders = {};
+    if (!listTask.firedReminders) listTask.firedReminders = {};
     listTask.snoozedReminders[key] = Date.now() + minutes * 60 * 1000;
-    localStorage.removeItem('fired_' + key);
+    delete listTask.firedReminders[key]; // allow re-fire after snooze
     save();
   }
 
@@ -1104,14 +1104,6 @@ function updateDate() {
   const now = new Date();
   document.getElementById('headerDate').textContent =
     new Intl.DateTimeFormat('fi-FI', { weekday:'long', day:'numeric', month:'long', year:'numeric' }).format(now);
-}
-
-// ─── TEST ────────────────────────────────────────────────────────────────────
-function testReminder() {
-  const allTasks = [...data.civil, ...data.work];
-  if (allTasks.length === 0) { showToast('Lisää ensin tehtävä'); return; }
-  const task = allTasks[0];
-  triggerNotif(task, 0, task.id + '_test');
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
