@@ -862,21 +862,14 @@ function addToGoogleCalendar(task) {
     dates = yyyy+mm+dd + '/' + next.getFullYear()+pad(next.getMonth()+1)+pad(next.getDate());
   }
 
-  let url = 'https://www.google.com/calendar/render?action=TEMPLATE';
+  let url = 'https://calendar.google.com/calendar/u/0/r/eventedit?action=TEMPLATE';
   url += '&text=' + encodeURIComponent(task.text);
   url += '&dates=' + dates;
   if (task.reminders && task.reminders.length > 0) {
     task.reminders.forEach(m => { url += '&add=' + m; });
   }
 
-  // Create invisible link and click it - bypasses mobile popup blocker
-  const a = document.createElement('a');
-  a.href = url;
-  a.target = '_blank';
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  window.location.href = url;
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
