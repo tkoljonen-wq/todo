@@ -564,7 +564,7 @@
 </header>
 
 <div id="notifBanner" style="display:none;align-items:center;gap:12px;background:#1a2a1a;border-bottom:1px solid #3a5a3a;padding:10px 16px;font-family:'DM Mono',monospace;font-size:13px;color:#8ec88e;flex-wrap:wrap;">
-  <span>🔔 Salli ilmoitukset niin muistutukset toimivat myös taustalla</span>
+  <span>🔔 Salli ilmoitukset niin saat muistutukset myös kun ohjelma on taustalla</span>
   <button onclick="requestNotifPermission()" style="background:#6ec88a;color:#0a1a0f;border:none;font-family:'DM Mono',monospace;font-size:12px;padding:6px 16px;border-radius:3px;cursor:pointer;font-weight:600;">Salli ilmoitukset</button>
   <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:#666;cursor:pointer;font-size:20px;line-height:1;padding:0 4px;margin-left:auto;">×</button>
 </div>
@@ -1006,7 +1006,9 @@ function checkReminders() {
         if (!alreadyFired && inWindow) {
           task.firedReminders[key] = now;
           save();
-          triggerNotif({...task, list: listName}, minutesBefore, key);
+          const taskCopy = {...task, list: listName};
+          triggerNotif(taskCopy, minutesBefore, key);
+          scheduleNativeNotif(taskCopy, minutesBefore, effectiveFire);
           return; // yksi kerrallaan
         }
       }
@@ -1106,13 +1108,42 @@ function updateDate() {
     new Intl.DateTimeFormat('fi-FI', { weekday:'long', day:'numeric', month:'long', year:'numeric' }).format(now);
 }
 
+// ─── SERVICE WORKER ──────────────────────────────────────────────────────────
+let swRegistration = null;
+
+async function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    swRegistration = await navigator.serviceWorker.register('sw.js');
+    console.log('SW registered');
+  } catch(e) {
+    console.warn('SW registration failed:', e);
+  }
+}
+
+function scheduleNativeNotif(task, minutesBefore, fireAt) {
+  if (!swRegistration || Notification.permission !== 'granted') return;
+  const dueStr = task.due
+    ? new Intl.DateTimeFormat('fi-FI').format(new Date(task.due)) + (task.dueTime ? ' klo ' + task.dueTime : '')
+    : '';
+  const opt = REMINDER_OPTS.find(o => o.value === minutesBefore);
+  swRegistration.active?.postMessage({
+    type: 'SCHEDULE_NOTIFICATION',
+    title: '📋 ' + task.text,
+    body: opt ? opt.label + (dueStr ? ' — ' + dueStr : '') : dueStr,
+    fireAt,
+    tag: task.id + '_' + minutesBefore
+  });
+}
+
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 load();
 updateDate();
 render();
-setInterval(checkReminders, 60 * 1000); // check every minute
-checkReminders(); // check on load
-checkNotifPermission(); // ask for notification permission
+registerSW();
+setInterval(checkReminders, 60 * 1000);
+checkReminders();
+checkNotifPermission();
 
 // Set min date for due date picker
 document.getElementById('dueDateInput').min = new Date().toISOString().split('T')[0];
