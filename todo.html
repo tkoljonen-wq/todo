@@ -561,6 +561,7 @@
 <header>
   <h1>Todo</h1>
   <span class="date" id="headerDate"></span>
+  <button onclick="testReminder()" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;padding:0.3rem 0.7rem;border-radius:3px;cursor:pointer;" title="Testaa muistutus">🔔 testi</button>
 </header>
 
 
@@ -988,34 +989,42 @@ function showToast(msg, isReminder = false) {
 }
 
 // ─── REMINDER CHECKING ────────────────────────────────────────────────────────
+function getDueMs(task) {
+  if (task.dueTime) {
+    const [h, m] = task.dueTime.split(':').map(Number);
+    const d = new Date(task.due);
+    d.setHours(h, m, 0, 0);
+    return d.getTime();
+  }
+  return new Date(task.due + 'T09:00:00').getTime();
+}
+
 function checkReminders() {
   const now = Date.now();
-  const allTasks = [...data.civil.map(t => ({...t, list:'civil'})), ...data.work.map(t => ({...t, list:'work'}))];
+  const allTasks = [
+    ...data.civil.map(t => ({...t, list:'civil'})),
+    ...data.work.map(t => ({...t, list:'work'}))
+  ];
 
   for (const task of allTasks) {
     if (task.done || !task.due || !task.reminders || task.reminders.length === 0) continue;
 
-    let dueMs;
-    if (task.dueTime) {
-      const [h, m] = task.dueTime.split(':').map(Number);
-      const d = new Date(task.due);
-      d.setHours(h, m, 0, 0);
-      dueMs = d.getTime();
-    } else {
-      dueMs = new Date(task.due).setHours(9, 0, 0, 0);
-    }
+    const dueMs = getDueMs(task);
 
     for (const minutesBefore of task.reminders) {
       const fireAt = dueMs - minutesBefore * 60 * 1000;
-      const key = `${task.id}_${minutesBefore}`;
+      const key = task.id + '_' + minutesBefore;
 
       // Snooze check
       const snoozedUntil = task.snoozedReminders && task.snoozedReminders[key];
-      const effectiveFire = snoozedUntil ? Math.max(fireAt, snoozedUntil) : fireAt;
+      const effectiveFire = snoozedUntil || fireAt;
 
+      // Fire if we're within a 10-minute window after scheduled time
       const fired = localStorage.getItem('fired_' + key);
-      if (!fired && now >= effectiveFire && now < effectiveFire + 60 * 60 * 1000) {
-        localStorage.setItem('fired_' + key, '1');
+      const inWindow = now >= effectiveFire && now < effectiveFire + 10 * 60 * 1000;
+
+      if (!fired && inWindow) {
+        localStorage.setItem('fired_' + key, String(now));
         triggerNotif(task, minutesBefore, key);
         return; // one at a time
       }
@@ -1025,16 +1034,20 @@ function checkReminders() {
 
 function triggerNotif(task, minutesBefore, key) {
   currentNotif = { task, minutesBefore, key };
-  document.getElementById('notifTitle').textContent = '🔔 Muistutus';
   const opt = REMINDER_OPTS.find(o => o.value === minutesBefore);
-  document.getElementById('notifBody').textContent =
-    `"${task.text}"` + (task.due ? `\n${opt ? opt.label : ''} — eräpäivä ${new Intl.DateTimeFormat('fi-FI').format(new Date(task.due))}` : '');
+  const dueStr = task.due
+    ? new Intl.DateTimeFormat('fi-FI').format(new Date(task.due)) + (task.dueTime ? ' klo ' + task.dueTime : '')
+    : '';
+  const body = task.text + (dueStr ? '\nEräpäivä: ' + dueStr : '');
+  document.getElementById('notifTitle').textContent = '🔔 ' + (opt ? opt.label : 'Muistutus');
+  document.getElementById('notifBody').textContent = body;
   document.getElementById('notifOverlay').classList.add('open');
   document.getElementById('snoozeOpts').style.display = 'none';
 
-  // Browser notification if permission granted
   if (Notification.permission === 'granted') {
-    new Notification('Todo muistutus', { body: task.text, icon: '' });
+    new Notification('📋 ' + task.text, { body: dueStr, icon: '' });
+  } else if (Notification.permission === 'default') {
+    Notification.requestPermission();
   }
 }
 
@@ -1050,28 +1063,47 @@ document.getElementById('notifSnoozeBtn').addEventListener('click', () => {
 
 function snooze(minutes) {
   if (!currentNotif) return;
-  const { task, minutesBefore, key } = currentNotif;
+  const { task, key } = currentNotif;
 
-  // Update snooze time in data
-  const listTask = data[task.list]?.find(t => t.id === task.id)
-    || data.civil.find(t => t.id === task.id)
-    || data.work.find(t => t.id === task.id);
+  const listName = data.civil.find(t => t.id === task.id) ? 'civil' : 'work';
+  const listTask = data[listName].find(t => t.id === task.id);
 
   if (listTask) {
     if (!listTask.snoozedReminders) listTask.snoozedReminders = {};
     listTask.snoozedReminders[key] = Date.now() + minutes * 60 * 1000;
-    localStorage.removeItem('fired_' + key); // allow re-fire after snooze
+    localStorage.removeItem('fired_' + key);
     save();
   }
 
   document.getElementById('notifOverlay').classList.remove('open');
   currentNotif = null;
-  showToast(`💤 Torkutettu ${minutes < 60 ? minutes + ' min' : minutes / 60 >= 24 ? '1 päivä' : '1 tunti'}`);
+  const label = minutes < 60 ? minutes + ' min' : minutes < 60*24 ? (minutes/60) + ' h' : '1 pv';
+  showToast('💤 Torkutettu ' + label);
 }
 
-// Request notification permission
-if ('Notification' in window && Notification.permission === 'default') {
-  Notification.requestPermission();
+// ─── NOTIFICATION PERMISSION ─────────────────────────────────────────────────
+function checkNotifPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    showNotifBanner();
+  }
+}
+
+function showNotifBanner() {
+  const banner = document.getElementById('notifBanner');
+  if (banner) banner.style.display = 'flex';
+}
+
+function requestNotifPermission() {
+  Notification.requestPermission().then(perm => {
+    const banner = document.getElementById('notifBanner');
+    if (banner) banner.style.display = 'none';
+    if (perm === 'granted') {
+      showToast('✅ Ilmoituslupa myönnetty — muistutukset toimivat!');
+    } else {
+      showToast('⚠️ Ilmoituslupa evätty — muistutukset näkyvät vain kun sivu on auki');
+    }
+  });
 }
 
 // ─── DATE HEADER ─────────────────────────────────────────────────────────────
@@ -1081,12 +1113,21 @@ function updateDate() {
     new Intl.DateTimeFormat('fi-FI', { weekday:'long', day:'numeric', month:'long', year:'numeric' }).format(now);
 }
 
+// ─── TEST ────────────────────────────────────────────────────────────────────
+function testReminder() {
+  const allTasks = [...data.civil, ...data.work];
+  if (allTasks.length === 0) { showToast('Lisää ensin tehtävä'); return; }
+  const task = allTasks[0];
+  triggerNotif(task, 0, task.id + '_test');
+}
+
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 load();
 updateDate();
 render();
 setInterval(checkReminders, 60 * 1000); // check every minute
 checkReminders(); // check on load
+checkNotifPermission(); // ask for notification permission
 
 // Set min date for due date picker
 document.getElementById('dueDateInput').min = new Date().toISOString().split('T')[0];
