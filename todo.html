@@ -727,7 +727,7 @@ function addToGoogleCalendar(task) {
     details: 'Lisätty Todo-sovelluksesta',
   });
 
-  const url = 'https://calendar.google.com/calendar/render?' + params.toString();
+  const url = 'https://calendar.google.com/calendar/r/eventedit?' + params.toString();
   window.open(url, '_blank');
 }
 
