@@ -569,7 +569,7 @@
     <div class="task-text-wrap">
       <textarea id="taskInput" rows="1" placeholder="Uusi tehtävä..."></textarea>
     </div>
-    <button class="mic-btn" id="micBtn" onmousedown="startMic()" onmouseup="stopMic()" onmouseleave="stopMic()" ontouchstart="startMic()" ontouchend="stopMic()" title="Puhu tehtävä suomeksi">🎤</button>
+    <button class="mic-btn" id="micBtn" onmousedown="startMic()" onmouseup="stopMic()" onmouseleave="stopMic()" ontouchstart="startMic()" ontouchend="stopMic()" ontouchcancel="stopMic()" title="Puhu tehtävä suomeksi">🎤</button>
   </div>
   <div class="meta-row">
     <input type="date" id="dueDateInput" title="Eräpäivä">
@@ -769,13 +769,9 @@ if (speechSupported) {
   };
 
   recognition.onend = () => {
-    dbg('kuuntelu loppui | tulos: ' + (finalTranscript || '(tyhjä)'));
-    isListening = false;
-    micBtn.classList.remove('active');
-    taskInput.classList.remove('listening');
-    micBtn.textContent = '🎤';
-    taskInput.placeholder = 'Uusi tehtävä...';
-    if (finalTranscript) {
+    // Always ensure UI is reset (catches cases where stopMic wasn't called)
+    resetMicUI();
+    if (finalTranscript && !taskInput.value) {
       taskInput.value = finalTranscript;
       taskInput.style.height = 'auto';
       taskInput.style.height = taskInput.scrollHeight + 'px';
