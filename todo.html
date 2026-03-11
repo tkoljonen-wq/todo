@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Todo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: #2e2e2e;
+    --text: #e8e4dc;
+    --muted: #666;
+    --work: #c8a96e;
+    --work-dim: #3a2e1a;
+    --civil: #6e9ec8;
+    --civil-dim: #1a2a3a;
+    --done: #3a3a3a;
+    --red: #c86e6e;
+    --green: #6ec88a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* HEADER */
+  header {
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+  }
+
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  header .date {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  /* INPUT AREA */
+  .input-area {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .task-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .task-text-wrap {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+  }
+
+  #taskInput {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    padding: 0.7rem 2.5rem 0.7rem 0.9rem;
+    border-radius: 4px;
+    outline: none;
+    resize: none;
+    min-height: 44px;
+    line-height: 1.5;
+  }
+
+  #taskInput:focus { border-color: var(--muted); }
+  #taskInput::placeholder { color: var(--muted); }
+
+  #taskInput.listening {
+    border-color: var(--red);
+    animation: pulse-border 1s infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { border-color: var(--red); }
+    50% { border-color: #8b3030; }
+  }
+
+  .mic-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 16px;
+    padding: 4px;
+    transition: color 0.2s;
+  }
+
+  .mic-btn:hover { color: var(--text); }
+  .mic-btn.active { color: var(--red); }
+
+  .meta-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+  }
+
+  .meta-row input[type="date"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 0.5rem 0.7rem;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .meta-row input[type="date"]:focus { border-color: var(--muted); }
+  .meta-row input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+    cursor: pointer;
+  }
+
+  /* REMINDER */
+  .reminder-wrap {
+    position: relative;
+  }
+
+  .reminder-trigger {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 0.5rem 0.7rem;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .reminder-trigger:hover { border-color: var(--muted); }
+  .reminder-trigger.has-reminders { border-color: var(--green); color: var(--green); }
+
+  .reminder-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem;
+    min-width: 280px;
+    z-index: 100;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+
+  .reminder-panel.open { display: block; }
+
+  .reminder-panel h4 {
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem;
+  }
+
+  .reminder-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; }
+
+  .reminder-item {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .reminder-item select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 0.35rem 0.5rem;
+    border-radius: 3px;
+    outline: none;
+    flex: 1;
+    cursor: pointer;
+  }
+
+  .remove-reminder {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+    line-height: 1;
+  }
+  .remove-reminder:hover { color: var(--red); }
+
+  .add-reminder-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 0.35rem 0.7rem;
+    border-radius: 3px;
+    cursor: pointer;
+    width: 100%;
+  }
+  .add-reminder-btn:hover { border-color: var(--muted); color: var(--text); }
+
+  /* SAVE BUTTONS */
+  .save-btns {
+    display: flex;
+    gap: 0.6rem;
+    margin-left: auto;
+  }
+
+  .btn-civil, .btn-work {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 0.6rem 1.2rem;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.05em;
+  }
+
+  .btn-civil {
+    background: var(--civil);
+    color: #0a1a2a;
+  }
+
+  .btn-work {
+    background: var(--work);
+    color: #1a0e00;
+  }
+
+  .btn-civil:hover, .btn-work:hover { opacity: 0.85; }
+  .btn-civil:active, .btn-work:active { transform: scale(0.97); }
+
+  /* LISTS */
+  .lists-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    min-height: calc(100vh - 280px);
+  }
+
+  @media (max-width: 700px) {
+    .lists-container { grid-template-columns: 1fr; }
+    .save-btns { margin-left: 0; width: 100%; }
+    .btn-civil, .btn-work { flex: 1; }
+  }
+
+  .list-col {
+    border-right: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+  }
+
+  .list-col:last-child { border-right: none; }
+
+  .list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.2rem;
+  }
+
+  .list-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .list-title.civil { color: var(--civil); }
+  .list-title.work { color: var(--work); }
+
+  .list-title .count {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    font-style: normal;
+  }
+
+  .clear-done-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 0.3rem 0.6rem;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+  .clear-done-btn:hover { color: var(--red); border-color: var(--red); }
+
+  /* TASK ITEMS */
+  .task-list { display: flex; flex-direction: column; gap: 0; }
+
+  .task-item {
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.5rem;
+    background: var(--surface);
+    transition: opacity 0.2s;
+    position: relative;
+  }
+
+  .task-item.civil-item { border-left: 3px solid var(--civil); }
+  .task-item.work-item { border-left: 3px solid var(--work); }
+  .task-item.done { opacity: 0.5; background: var(--done); }
+  .task-item.done .task-text { text-decoration: line-through; color: var(--muted); }
+
+  .task-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+  }
+
+  .check-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: transparent;
+    margin-top: 1px;
+    transition: all 0.15s;
+  }
+
+  .task-item.done .check-btn {
+    background: var(--green);
+    border-color: var(--green);
+    color: #0a1a0f;
+  }
+
+  .check-btn:hover { border-color: var(--green); }
+
+  .task-text {
+    flex: 1;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .task-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+    margin-left: 27px;
+    flex-wrap: wrap;
+  }
+
+  .task-due {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .task-due.overdue { color: var(--red); }
+  .task-due.today { color: var(--work); }
+  .task-due.soon { color: var(--work); }
+
+  .task-reminders {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .delete-btn {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    background: none;
+    border: none;
+    color: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    transition: color 0.15s;
+    padding: 2px 5px;
+    line-height: 1;
+  }
+
+  .task-item:hover .delete-btn { color: var(--muted); }
+  .delete-btn:hover { color: var(--red) !important; }
+
+  /* NOTIFICATION TOAST */
+  #toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 400px;
+    text-align: center;
+  }
+
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.reminder { border-color: var(--green); }
+
+  /* REMINDER NOTIFICATION */
+  .notif-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .notif-overlay.open { display: flex; }
+
+  .notif-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2rem;
+    max-width: 380px;
+    width: 90%;
+    box-shadow: 0 16px 64px rgba(0,0,0,0.7);
+  }
+
+  .notif-box h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .notif-box p {
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 1.2rem;
+    line-height: 1.6;
+  }
+
+  .notif-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .notif-dismiss {
+    background: var(--green);
+    color: #0a1a0f;
+    border: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 0.6rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  .notif-snooze {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 0.6rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .notif-snooze:hover { border-color: var(--muted); }
+
+  .snooze-opts {
+    display: none;
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .snooze-opt {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 0.4rem 0.7rem;
+    border-radius: 3px;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .snooze-opt:hover { border-color: var(--muted); color: var(--text); }
+
+  .empty-list {
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    padding: 2rem;
+    border: 1px dashed var(--border);
+    border-radius: 5px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Todo</h1>
+  <span class="date" id="headerDate"></span>
+</header>
+
+<div class="input-area">
+  <div class="task-row">
+    <div class="task-text-wrap">
+      <textarea id="taskInput" rows="1" placeholder="Uusi tehtävä... tai paina 🎤"></textarea>
+      <button class="mic-btn" id="micBtn" title="Puhu tehtävä">🎤</button>
+    </div>
+  </div>
+  <div class="meta-row">
+    <input type="date" id="dueDateInput" title="Eräpäivä">
+    <div class="reminder-wrap" id="reminderWrap">
+      <button class="reminder-trigger" id="reminderTrigger">🔔 Muistutukset</button>
+      <div class="reminder-panel" id="reminderPanel">
+        <h4>Muistutukset</h4>
+        <div class="reminder-list" id="reminderList"></div>
+        <button class="add-reminder-btn" id="addReminderBtn">+ Lisää muistutus</button>
+      </div>
+    </div>
+    <div class="save-btns">
+      <button class="btn-civil" id="saveCivilBtn">💙 Siviili</button>
+      <button class="btn-work" id="saveWorkBtn">🟡 Työ</button>
+    </div>
+  </div>
+</div>
+
+<div class="lists-container">
+  <div class="list-col">
+    <div class="list-header">
+      <span class="list-title civil">Siviili <span class="count" id="civilCount"></span></span>
+      <button class="clear-done-btn" onclick="clearDone('civil')">Poista valmiit</button>
+    </div>
+    <div class="task-list" id="civilList"></div>
+  </div>
+  <div class="list-col">
+    <div class="list-header">
+      <span class="list-title work">Työ <span class="count" id="workCount"></span></span>
+      <button class="clear-done-btn" onclick="clearDone('work')">Poista valmiit</button>
+    </div>
+    <div class="task-list" id="workList"></div>
+  </div>
+</div>
+
+<div id="toast">⚡</div>
+
+<!-- Reminder notification overlay -->
+<div class="notif-overlay" id="notifOverlay">
+  <div class="notif-box">
+    <h3 id="notifTitle">Muistutus</h3>
+    <p id="notifBody"></p>
+    <div class="notif-actions">
+      <button class="notif-dismiss" id="notifDismiss">✓ Kuittaa</button>
+      <button class="notif-snooze" id="notifSnoozeBtn">💤 Torkuta</button>
+    </div>
+    <div class="snooze-opts" id="snoozeOpts">
+      <button class="snooze-opt" onclick="snooze(15)">15 min</button>
+      <button class="snooze-opt" onclick="snooze(60)">1 tunti</button>
+      <button class="snooze-opt" onclick="snooze(60*24)">1 päivä</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'todo_v2';
+let data = { civil: [], work: [] };
+let currentNotif = null;
+
+function load() {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    if (s) data = JSON.parse(s);
+  } catch(e) {}
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+// ─── REMINDER OPTIONS ────────────────────────────────────────────────────────
+const REMINDER_OPTS = [
+  { value: 0,       label: 'Eräpäivänä' },
+  { value: 60,      label: '1 tunti ennen' },
+  { value: 60*3,    label: '3 tuntia ennen' },
+  { value: 60*24,   label: '1 päivä ennen' },
+  { value: 60*24*2, label: '2 päivää ennen' },
+  { value: 60*24*3, label: '3 päivää ennen' },
+  { value: 60*24*7, label: '1 viikko ennen' },
+];
+
+// ─── REMINDER UI ─────────────────────────────────────────────────────────────
+let pendingReminders = [];
+
+document.getElementById('reminderTrigger').addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.getElementById('reminderPanel').classList.toggle('open');
+});
+
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('reminderWrap').contains(e.target)) {
+    document.getElementById('reminderPanel').classList.remove('open');
+  }
+});
+
+document.getElementById('addReminderBtn').addEventListener('click', () => {
+  pendingReminders.push(60 * 24); // default 1 day
+  renderReminderInputs();
+});
+
+function renderReminderInputs() {
+  const list = document.getElementById('reminderList');
+  list.innerHTML = '';
+  pendingReminders.forEach((val, i) => {
+    const row = document.createElement('div');
+    row.className = 'reminder-item';
+    const sel = document.createElement('select');
+    REMINDER_OPTS.forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o.value;
+      opt.textContent = o.label;
+      if (o.value === val) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => { pendingReminders[i] = parseInt(sel.value); });
+    const rm = document.createElement('button');
+    rm.className = 'remove-reminder';
+    rm.textContent = '×';
+    rm.addEventListener('click', () => { pendingReminders.splice(i, 1); renderReminderInputs(); });
+    row.appendChild(sel);
+    row.appendChild(rm);
+    list.appendChild(row);
+  });
+  const trigger = document.getElementById('reminderTrigger');
+  trigger.classList.toggle('has-reminders', pendingReminders.length > 0);
+  trigger.textContent = pendingReminders.length > 0
+    ? `🔔 ${pendingReminders.length} muistutus${pendingReminders.length > 1 ? 'ta' : ''}`
+    : '🔔 Muistutukset';
+}
+
+// ─── TASK INPUT AUTO-RESIZE ───────────────────────────────────────────────────
+const taskInput = document.getElementById('taskInput');
+taskInput.addEventListener('input', () => {
+  taskInput.style.height = 'auto';
+  taskInput.style.height = taskInput.scrollHeight + 'px';
+});
+
+taskInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    // don't save on Enter, just focus date
+    document.getElementById('dueDateInput').focus();
+  }
+});
+
+// ─── VOICE RECOGNITION ───────────────────────────────────────────────────────
+let recognition = null;
+let isListening = false;
+
+const micBtn = document.getElementById('micBtn');
+
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'fi-FI';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+
+  recognition.onstart = () => {
+    isListening = true;
+    micBtn.classList.add('active');
+    taskInput.classList.add('listening');
+    micBtn.textContent = '🔴';
+  };
+
+  recognition.onend = () => {
+    isListening = false;
+    micBtn.classList.remove('active');
+    taskInput.classList.remove('listening');
+    micBtn.textContent = '🎤';
+  };
+
+  recognition.onerror = (e) => {
+    console.warn('Speech error:', e.error);
+    isListening = false;
+    micBtn.classList.remove('active');
+    taskInput.classList.remove('listening');
+    micBtn.textContent = '🎤';
+  };
+
+  recognition.onresult = (e) => {
+    let transcript = '';
+    for (let i = 0; i < e.results.length; i++) {
+      transcript += e.results[i][0].transcript;
+    }
+    taskInput.value = transcript;
+    taskInput.style.height = 'auto';
+    taskInput.style.height = taskInput.scrollHeight + 'px';
+  };
+
+  micBtn.addEventListener('click', () => {
+    if (isListening) {
+      recognition.stop();
+    } else {
+      taskInput.value = '';
+      recognition.start();
+    }
+  });
+} else {
+  micBtn.title = 'Puheentunnistus ei tuettu tässä selaimessa';
+  micBtn.style.opacity = '0.3';
+}
+
+// ─── SAVE TASK ───────────────────────────────────────────────────────────────
+function getTaskInput() {
+  return {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    text: taskInput.value.trim(),
+    due: document.getElementById('dueDateInput').value,
+    reminders: [...pendingReminders],
+    snoozedReminders: {},
+    done: false,
+    created: Date.now(),
+  };
+}
+
+function resetForm() {
+  taskInput.value = '';
+  taskInput.style.height = 'auto';
+  document.getElementById('dueDateInput').value = '';
+  pendingReminders = [];
+  renderReminderInputs();
+  document.getElementById('reminderPanel').classList.remove('open');
+}
+
+document.getElementById('saveCivilBtn').addEventListener('click', () => saveTask('civil'));
+document.getElementById('saveWorkBtn').addEventListener('click', () => saveTask('work'));
+
+function saveTask(list) {
+  const task = getTaskInput();
+  if (!task.text) {
+    taskInput.focus();
+    showToast('Kirjoita ensin tehtävä!');
+    return;
+  }
+  data[list].unshift(task);
+  save();
+  render();
+  resetForm();
+  taskInput.focus();
+  showToast(list === 'civil' ? '💙 Lisätty siviililistalle' : '🟡 Lisätty työlistalle');
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function formatDue(dateStr) {
+  if (!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const due = new Date(dateStr); due.setHours(0,0,0,0);
+  const diff = Math.round((due - today) / (1000*60*60*24));
+  const fi = new Intl.DateTimeFormat('fi-FI', { day:'numeric', month:'numeric', year:'numeric' });
+  const label = fi.format(due);
+  let cls = 'task-due';
+  let prefix = '📅';
+  if (diff < 0) { cls += ' overdue'; prefix = '⚠️'; }
+  else if (diff === 0) { cls += ' today'; prefix = '🔥'; }
+  else if (diff <= 3) { cls += ' soon'; prefix = '⏰'; }
+  return { cls, text: prefix + ' ' + label };
+}
+
+function renderList(listName) {
+  const container = document.getElementById(listName + 'List');
+  const tasks = data[listName];
+  const countEl = document.getElementById(listName + 'Count');
+  const active = tasks.filter(t => !t.done).length;
+  countEl.textContent = `(${active}/${tasks.length})`;
+
+  if (tasks.length === 0) {
+    container.innerHTML = '<div class="empty-list">Ei tehtäviä</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  tasks.forEach(task => {
+    const item = document.createElement('div');
+    item.className = `task-item ${listName}-item${task.done ? ' done' : ''}`;
+    item.dataset.id = task.id;
+
+    const top = document.createElement('div');
+    top.className = 'task-top';
+
+    const check = document.createElement('button');
+    check.className = 'check-btn';
+    check.textContent = task.done ? '✓' : '';
+    check.title = task.done ? 'Merkitse tekemättömäksi' : 'Merkitse tehdyksi';
+    check.addEventListener('click', () => toggleDone(listName, task.id));
+
+    const text = document.createElement('span');
+    text.className = 'task-text';
+    text.textContent = task.text;
+
+    const del = document.createElement('button');
+    del.className = 'delete-btn';
+    del.textContent = '×';
+    del.title = 'Poista tehtävä';
+    del.addEventListener('click', () => deleteTask(listName, task.id));
+
+    top.appendChild(check);
+    top.appendChild(text);
+    item.appendChild(top);
+    item.appendChild(del);
+
+    // Meta row
+    const hasDue = task.due;
+    const hasReminders = task.reminders && task.reminders.length > 0;
+
+    if (hasDue || hasReminders) {
+      const meta = document.createElement('div');
+      meta.className = 'task-meta';
+
+      if (hasDue) {
+        const d = formatDue(task.due);
+        if (d) {
+          const dueEl = document.createElement('span');
+          dueEl.className = d.cls;
+          dueEl.textContent = d.text;
+          meta.appendChild(dueEl);
+        }
+      }
+
+      if (hasReminders) {
+        const remEl = document.createElement('span');
+        remEl.className = 'task-reminders';
+        remEl.textContent = `🔔 ${task.reminders.length} muistutus${task.reminders.length > 1 ? 'ta' : ''}`;
+        meta.appendChild(remEl);
+      }
+
+      item.appendChild(meta);
+    }
+
+    container.appendChild(item);
+  });
+}
+
+function render() {
+  renderList('civil');
+  renderList('work');
+}
+
+// ─── TASK ACTIONS ─────────────────────────────────────────────────────────────
+function toggleDone(list, id) {
+  const t = data[list].find(t => t.id === id);
+  if (t) {
+    t.done = !t.done;
+    t.doneAt = t.done ? Date.now() : null;
+    save();
+    render();
+  }
+}
+
+function deleteTask(list, id) {
+  data[list] = data[list].filter(t => t.id !== id);
+  save();
+  render();
+}
+
+function clearDone(list) {
+  const count = data[list].filter(t => t.done).length;
+  if (count === 0) { showToast('Ei valmiita tehtäviä poistettavaksi'); return; }
+  data[list] = data[list].filter(t => !t.done);
+  save();
+  render();
+  showToast(`🗑️ Poistettu ${count} valmis tehtävä${count > 1 ? 'ä' : ''}`);
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, isReminder = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (isReminder ? ' reminder' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+// ─── REMINDER CHECKING ────────────────────────────────────────────────────────
+function checkReminders() {
+  const now = Date.now();
+  const allTasks = [...data.civil.map(t => ({...t, list:'civil'})), ...data.work.map(t => ({...t, list:'work'}))];
+
+  for (const task of allTasks) {
+    if (task.done || !task.due || !task.reminders || task.reminders.length === 0) continue;
+
+    const dueMs = new Date(task.due).setHours(9, 0, 0, 0); // fire at 9am on due day
+
+    for (const minutesBefore of task.reminders) {
+      const fireAt = dueMs - minutesBefore * 60 * 1000;
+      const key = `${task.id}_${minutesBefore}`;
+
+      // Snooze check
+      const snoozedUntil = task.snoozedReminders && task.snoozedReminders[key];
+      const effectiveFire = snoozedUntil ? Math.max(fireAt, snoozedUntil) : fireAt;
+
+      const fired = localStorage.getItem('fired_' + key);
+      if (!fired && now >= effectiveFire && now < effectiveFire + 60 * 60 * 1000) {
+        localStorage.setItem('fired_' + key, '1');
+        triggerNotif(task, minutesBefore, key);
+        return; // one at a time
+      }
+    }
+  }
+}
+
+function triggerNotif(task, minutesBefore, key) {
+  currentNotif = { task, minutesBefore, key };
+  document.getElementById('notifTitle').textContent = '🔔 Muistutus';
+  const opt = REMINDER_OPTS.find(o => o.value === minutesBefore);
+  document.getElementById('notifBody').textContent =
+    `"${task.text}"` + (task.due ? `\n${opt ? opt.label : ''} — eräpäivä ${new Intl.DateTimeFormat('fi-FI').format(new Date(task.due))}` : '');
+  document.getElementById('notifOverlay').classList.add('open');
+  document.getElementById('snoozeOpts').style.display = 'none';
+
+  // Browser notification if permission granted
+  if (Notification.permission === 'granted') {
+    new Notification('Todo muistutus', { body: task.text, icon: '' });
+  }
+}
+
+document.getElementById('notifDismiss').addEventListener('click', () => {
+  document.getElementById('notifOverlay').classList.remove('open');
+  currentNotif = null;
+});
+
+document.getElementById('notifSnoozeBtn').addEventListener('click', () => {
+  const s = document.getElementById('snoozeOpts');
+  s.style.display = s.style.display === 'none' ? 'flex' : 'none';
+});
+
+function snooze(minutes) {
+  if (!currentNotif) return;
+  const { task, minutesBefore, key } = currentNotif;
+
+  // Update snooze time in data
+  const listTask = data[task.list]?.find(t => t.id === task.id)
+    || data.civil.find(t => t.id === task.id)
+    || data.work.find(t => t.id === task.id);
+
+  if (listTask) {
+    if (!listTask.snoozedReminders) listTask.snoozedReminders = {};
+    listTask.snoozedReminders[key] = Date.now() + minutes * 60 * 1000;
+    localStorage.removeItem('fired_' + key); // allow re-fire after snooze
+    save();
+  }
+
+  document.getElementById('notifOverlay').classList.remove('open');
+  currentNotif = null;
+  showToast(`💤 Torkutettu ${minutes < 60 ? minutes + ' min' : minutes / 60 >= 24 ? '1 päivä' : '1 tunti'}`);
+}
+
+// Request notification permission
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+
+// ─── DATE HEADER ─────────────────────────────────────────────────────────────
+function updateDate() {
+  const now = new Date();
+  document.getElementById('headerDate').textContent =
+    new Intl.DateTimeFormat('fi-FI', { weekday:'long', day:'numeric', month:'long', year:'numeric' }).format(now);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+load();
+updateDate();
+render();
+setInterval(checkReminders, 60 * 1000); // check every minute
+checkReminders(); // check on load
+
+// Set min date for due date picker
+document.getElementById('dueDateInput').min = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>
