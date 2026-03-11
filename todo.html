@@ -573,7 +573,7 @@
     <div class="task-text-wrap">
       <textarea id="taskInput" rows="1" placeholder="Uusi tehtävä..."></textarea>
     </div>
-    <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Puhu tehtävä suomeksi">🎤</button>
+    <button class="mic-btn" id="micBtn" onmousedown="startMic()" onmouseup="stopMic()" onmouseleave="stopMic()" ontouchstart="startMic()" ontouchend="stopMic()" title="Puhu tehtävä suomeksi">🎤</button>
   </div>
   <div class="meta-row">
     <input type="date" id="dueDateInput" title="Eräpäivä">
@@ -739,27 +739,28 @@ function dbg(msg) {
   console.log('[mic]', msg);
 }
 
-function toggleMic() {
-  dbg('nappi painettu | speech:' + speechSupported + ' | listening:' + isListening);
-  if (!speechSupported) {
-    showToast('⚠️ Puheentunnistus vaatii Chrome-selaimen');
-    return;
-  }
-  if (isListening) {
-    recognition.stop();
-  } else {
-    taskInput.value = '';
-    finalTranscript = '';
-    try {
-      recognition.start();
-      dbg('start() kutsuttu...');
-    } catch(err) {
-      dbg('start() epäonnistui: ' + err.message);
-      try { recognition.stop(); } catch(e) {}
-      setTimeout(() => { try { recognition.start(); } catch(e) { console.error('[mic] retry failed:', e.message); } }, 400);
-    }
+function startMic() {
+  if (!speechSupported) { showToast('⚠️ Puheentunnistus vaatii Chrome-selaimen'); return; }
+  if (isListening) return;
+  taskInput.value = '';
+  finalTranscript = '';
+  try {
+    recognition.start();
+    dbg('start() kutsuttu...');
+  } catch(err) {
+    dbg('start() epäonnistui: ' + err.message);
+    try { recognition.stop(); } catch(e) {}
+    setTimeout(() => { try { recognition.start(); } catch(e) {} }, 400);
   }
 }
+
+function stopMic() {
+  if (!isListening) return;
+  try { recognition.stop(); } catch(e) {}
+}
+
+// Poistetaan vanha toggleMic — ei enää tarvita
+function toggleMic() {}
 
 if (speechSupported) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
