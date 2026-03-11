@@ -845,47 +845,26 @@ function updateDate() {
 function addToGoogleCalendar(task) {
   if (!task.due) { showToast('Aseta ensin eräpäivä'); return; }
 
-  // Parse date parts directly from string to avoid UTC timezone issues
   const [yyyy, mm, dd] = task.due.split('-');
   const pad = n => String(n).padStart(2, '0');
 
-  let startDt, endDt;
+  let dates;
   if (task.dueTime) {
     const [hh, mi] = task.dueTime.split(':');
-    // Start: YYYYMMDDTHHmm00
-    startDt = yyyy + mm + dd + 'T' + hh + mi + '00';
-    // End: +30 minutes
+    const startDt = yyyy + mm + dd + 'T' + hh + mi + '00';
     const totalMin = parseInt(hh) * 60 + parseInt(mi) + 30;
     const endH = pad(Math.floor(totalMin / 60) % 24);
     const endM = pad(totalMin % 60);
-    // Handle day overflow
-    let endDate = task.due;
-    if (Math.floor(totalMin / 60) >= 24) {
-      const d = new Date(parseInt(yyyy), parseInt(mm)-1, parseInt(dd) + 1);
-      endDate = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate());
-    } else {
-      endDate = yyyy + mm + dd;
-    }
-    endDt = endDate + 'T' + endH + endM + '00';
+    const endDt = yyyy + mm + dd + 'T' + endH + endM + '00';
+    dates = startDt + '/' + endDt;
   } else {
-    // All-day: YYYYMMDD / next day YYYYMMDD
-    startDt = yyyy + mm + dd;
-    const next = new Date(parseInt(yyyy), parseInt(mm)-1, parseInt(dd) + 1);
-    endDt = next.getFullYear() + pad(next.getMonth()+1) + pad(next.getDate());
+    const next = new Date(parseInt(yyyy), parseInt(mm)-1, parseInt(dd)+1);
+    dates = yyyy+mm+dd + '/' + next.getFullYear()+pad(next.getMonth()+1)+pad(next.getDate());
   }
 
-  // Build URL manually to avoid URLSearchParams encoding issues with Google Calendar
-  const title = encodeURIComponent(task.text);
-  const dates = startDt + '/' + endDt;
-  const details = encodeURIComponent('Lisätty Todo-sovelluksesta');
-
-  let url = 'https://calendar.google.com/calendar/r/eventedit'
-    + '?action=TEMPLATE'
-    + '&text=' + title
-    + '&dates=' + dates
-    + '&details=' + details;
-
-  // Reminders in minutes
+  let url = 'https://calendar.google.com/calendar/r/eventedit?action=TEMPLATE';
+  url += '&text=' + encodeURIComponent(task.text);
+  url += '&dates=' + dates;
   if (task.reminders && task.reminders.length > 0) {
     task.reminders.forEach(m => { url += '&add=' + m; });
   }
