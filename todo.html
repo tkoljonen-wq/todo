@@ -339,6 +339,70 @@
   .task-item:hover .delete-btn { color: var(--muted); }
   .delete-btn:hover { color: var(--red) !important; }
 
+  /* REMINDER */
+  .reminder-wrap { position: relative; }
+
+  .reminder-trigger {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 0.5rem 0.7rem;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .reminder-trigger:hover { border-color: var(--muted); }
+  .reminder-trigger.has-reminders { border-color: var(--green); color: var(--green); }
+
+  .reminder-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem;
+    min-width: 260px;
+    z-index: 100;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+  .reminder-panel.open { display: block; }
+  .reminder-panel h4 { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; }
+  .reminder-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; }
+  .reminder-item { display: flex; gap: 0.5rem; align-items: center; }
+  .reminder-item select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 0.35rem 0.5rem;
+    border-radius: 3px;
+    outline: none;
+    flex: 1;
+    cursor: pointer;
+  }
+  .remove-reminder { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 0 4px; line-height: 1; }
+  .remove-reminder:hover { color: var(--red); }
+  .add-reminder-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 0.35rem 0.7rem;
+    border-radius: 3px;
+    cursor: pointer;
+    width: 100%;
+  }
+  .add-reminder-btn:hover { border-color: var(--muted); color: var(--text); }
+
   .cal-btn {
     font-size: 11px;
     background: none;
@@ -382,6 +446,14 @@
     <input type="date" id="dueDateInput" title="Eräpäivä">
     <input type="time" id="dueTimeInput" title="Kellonaika" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:0.5rem 0.7rem;border-radius:4px;outline:none;cursor:pointer;" >
 
+    <div class="reminder-wrap" id="reminderWrap">
+      <button class="reminder-trigger" id="reminderTrigger">🔔 Muistutus</button>
+      <div class="reminder-panel" id="reminderPanel">
+        <h4>Muistutus kalenteriin</h4>
+        <div class="reminder-list" id="reminderList"></div>
+        <button class="add-reminder-btn" id="addReminderBtn">+ Lisää muistutus</button>
+      </div>
+    </div>
     <div class="save-btns">
       <button class="btn-civil" id="saveCivilBtn">💙 Siviili</button>
       <button class="btn-work" id="saveWorkBtn">🟡 Työ</button>
@@ -441,6 +513,68 @@ taskInput.addEventListener('keydown', (e) => {
     document.getElementById('dueDateInput').focus();
   }
 });
+
+// ─── REMINDER OPTIONS ────────────────────────────────────────────────────────
+const REMINDER_OPTS = [
+  { value: 0,        label: 'Tapahtuman aikaan' },
+  { value: 5,        label: '5 min ennen' },
+  { value: 10,       label: '10 min ennen' },
+  { value: 15,       label: '15 min ennen' },
+  { value: 30,       label: '30 min ennen' },
+  { value: 60,       label: '1 tunti ennen' },
+  { value: 60*2,     label: '2 tuntia ennen' },
+  { value: 60*24,    label: '1 päivä ennen' },
+  { value: 60*24*2,  label: '2 päivää ennen' },
+  { value: 60*24*7,  label: '1 viikko ennen' },
+];
+
+let pendingReminders = [];
+
+document.getElementById('reminderTrigger').addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.getElementById('reminderPanel').classList.toggle('open');
+});
+
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('reminderWrap').contains(e.target)) {
+    document.getElementById('reminderPanel').classList.remove('open');
+  }
+});
+
+document.getElementById('addReminderBtn').addEventListener('click', () => {
+  pendingReminders.push(30);
+  renderReminderInputs();
+});
+
+function renderReminderInputs() {
+  const list = document.getElementById('reminderList');
+  list.innerHTML = '';
+  pendingReminders.forEach((val, i) => {
+    const row = document.createElement('div');
+    row.className = 'reminder-item';
+    const sel = document.createElement('select');
+    REMINDER_OPTS.forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o.value;
+      opt.textContent = o.label;
+      if (o.value === val) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => { pendingReminders[i] = parseInt(sel.value); });
+    const rm = document.createElement('button');
+    rm.className = 'remove-reminder';
+    rm.textContent = '×';
+    rm.addEventListener('click', () => { pendingReminders.splice(i, 1); renderReminderInputs(); });
+    row.appendChild(sel);
+    row.appendChild(rm);
+    list.appendChild(row);
+  });
+  const trigger = document.getElementById('reminderTrigger');
+  trigger.classList.toggle('has-reminders', pendingReminders.length > 0);
+  trigger.textContent = pendingReminders.length > 0
+    ? `🔔 ${pendingReminders.length} muistutus`
+    : '🔔 Muistutus';
+}
 
 // ─── VOICE RECOGNITION (ostoslista-pattern: uusi olio joka kerta) ───────────
 let isListening = false;
@@ -523,6 +657,7 @@ function getTaskInput() {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
     text: taskInput.value.trim(),
     due: document.getElementById('dueDateInput').value,
+    reminders: [...pendingReminders],
     dueTime: document.getElementById('dueTimeInput').value,
     done: false,
     created: Date.now(),
@@ -534,6 +669,9 @@ function resetForm() {
   taskInput.style.height = 'auto';
   document.getElementById('dueDateInput').value = '';
   document.getElementById('dueTimeInput').value = '';
+  pendingReminders = [];
+  renderReminderInputs();
+  document.getElementById('reminderPanel').classList.remove('open');
 }
 
 document.getElementById('saveCivilBtn').addEventListener('click', () => saveTask('civil'));
@@ -623,6 +761,19 @@ function renderList(listName) {
         dueEl.className = d.cls;
         dueEl.textContent = d.text;
         meta.appendChild(dueEl);
+      }
+
+      // Reminder info
+      if (task.reminders && task.reminders.length > 0) {
+        const remEl = document.createElement('span');
+        remEl.className = 'task-due';
+        remEl.style.color = 'var(--green)';
+        const labels = task.reminders.map(m => {
+          const o = REMINDER_OPTS.find(r => r.value === m);
+          return o ? o.label : m + ' min';
+        });
+        remEl.textContent = '🔔 ' + labels.join(', ');
+        meta.appendChild(remEl);
       }
 
       // Google Calendar button
@@ -726,6 +877,11 @@ function addToGoogleCalendar(task) {
     dates: startDt + '/' + endDt,
     details: 'Lisätty Todo-sovelluksesta',
   });
+
+  // Add reminders (Google Calendar supports multiple 'add' params in minutes)
+  if (task.reminders && task.reminders.length > 0) {
+    task.reminders.forEach(m => params.append('add', m));
+  }
 
   const url = 'https://calendar.google.com/calendar/r/eventedit?' + params.toString();
   window.open(url, '_blank');
