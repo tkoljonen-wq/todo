@@ -890,6 +890,8 @@ function addToGoogleCalendar(task) {
     task.reminders.forEach(m => { url += '&add=' + m; });
   }
 
+  // DEBUG: show URL before opening
+  if (!confirm('Avataanko kalenteri?\n\n' + url)) return;
   window.open(url, '_blank');
 }
 
