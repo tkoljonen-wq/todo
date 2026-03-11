@@ -41,7 +41,7 @@ self.addEventListener('notificationclick', e => {
   e.waitUntil(
     self.clients.matchAll({ type: 'window' }).then(clients => {
       if (clients.length > 0) return clients[0].focus();
-      return self.clients.openWindow('/');
+      return self.clients.openWindow('./todo.html');
     })
   );
 });
