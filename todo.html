@@ -532,9 +532,19 @@ function addToGoogleCalendar(task) {
     const next = new Date(parseInt(yyyy), parseInt(mm)-1, parseInt(dd)+1);
     dates = yyyy+mm+dd + '/' + next.getFullYear()+pad(next.getMonth()+1)+pad(next.getDate());
   }
-  window.location.href = 'https://www.google.com/calendar/render?action=TEMPLATE'
+  const url = 'https://www.google.com/calendar/render?action=TEMPLATE'
     + '&text=' + encodeURIComponent(task.text)
     + '&dates=' + dates;
+
+  // Open in new tab - must happen synchronously in click handler to avoid Android app intercept
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  // Force browser by adding a query param that calendar app doesn't recognize
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => document.body.removeChild(a), 100);
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
