@@ -3,7 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f0f0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Todo">
 <title>Todo</title>
+
+<!-- SVG favicon -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%231a1a1a'/%3E%3Crect x='2' y='2' width='508' height='508' rx='94' fill='none' stroke='%232e2e2e' stroke-width='4'/%3E%3Ccircle cx='140' cy='160' r='22' fill='none' stroke='%236ec88a' stroke-width='6'/%3E%3Cpath d='M128 160l8 8 18-18' fill='none' stroke='%236ec88a' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='190' y='146' width='200' height='6' rx='3' fill='%23e8e4dc' opacity='0.8'/%3E%3Crect x='190' y='162' width='130' height='5' rx='2.5' fill='%23666'/%3E%3Ccircle cx='140' cy='260' r='22' fill='none' stroke='%23c8a96e' stroke-width='6'/%3E%3Crect x='190' y='246' width='220' height='6' rx='3' fill='%23e8e4dc' opacity='0.8'/%3E%3Crect x='190' y='262' width='100' height='5' rx='2.5' fill='%23666'/%3E%3Ccircle cx='140' cy='360' r='22' fill='none' stroke='%236e9ec8' stroke-width='6'/%3E%3Cpath d='M128 360l8 8 18-18' fill='none' stroke='%236e9ec8' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='190' y='346' width='180' height='6' rx='3' fill='%23666' opacity='0.5'/%3E%3Crect x='190' y='362' width='110' height='5' rx='2.5' fill='%23666' opacity='0.3'/%3E%3C/svg%3E" />
+
+<!-- Apple touch icon (generoidaan canvasilla) -->
+<link rel="apple-touch-icon" id="appleTouchIcon" />
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap');
 
@@ -536,7 +547,6 @@ function addToGoogleCalendar(task) {
     + '&text=' + encodeURIComponent(task.text)
     + '&dates=' + dates;
 
-  // Open in new tab so Todo stays open
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
@@ -556,6 +566,117 @@ document.getElementById('headerDate').textContent =
   new Intl.DateTimeFormat('fi-FI', { weekday:'long', day:'numeric', month:'long', year:'numeric' }).format(new Date());
 document.getElementById('dueDateInput').min = new Date().toISOString().split('T')[0];
 render();
+</script>
+
+<!-- Web App Manifest & ikoni-generointi -->
+<script>
+(function() {
+  function generateIcon(size) {
+    const c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    const ctx = c.getContext('2d');
+    const s = size / 512;
+
+    // Tumma pyöristetty tausta
+    const r = 96 * s;
+    ctx.fillStyle = '#1a1a1a';
+    ctx.beginPath();
+    ctx.moveTo(r, 0);
+    ctx.lineTo(size - r, 0); ctx.quadraticCurveTo(size, 0, size, r);
+    ctx.lineTo(size, size - r); ctx.quadraticCurveTo(size, size, size - r, size);
+    ctx.lineTo(r, size); ctx.quadraticCurveTo(0, size, 0, size - r);
+    ctx.lineTo(0, r); ctx.quadraticCurveTo(0, 0, r, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    // Hieno reunaviiva
+    ctx.strokeStyle = '#2e2e2e';
+    ctx.lineWidth = 4 * s;
+    ctx.stroke();
+
+    // Kolme tehtäväriviä: valmis (vihreä), työ (kulta), valmis (sininen)
+    const rows = [
+      { y: 150, color: '#6ec88a', checked: true },
+      { y: 256, color: '#c8a96e', checked: false },
+      { y: 362, color: '#6e9ec8', checked: true },
+    ];
+
+    rows.forEach(row => {
+      const cy = row.y * s;
+      const cx = 140 * s;
+      const cr = 22 * s;
+
+      // Ympyrä (checkbox)
+      ctx.beginPath();
+      ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+      ctx.strokeStyle = row.color;
+      ctx.lineWidth = 6 * s;
+      ctx.stroke();
+
+      // Checkmark
+      if (row.checked) {
+        ctx.beginPath();
+        ctx.moveTo((128) * s, cy);
+        ctx.lineTo((136) * s, cy + 8 * s);
+        ctx.lineTo((154) * s, cy - 10 * s);
+        ctx.strokeStyle = row.color;
+        ctx.lineWidth = 6 * s;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+      }
+
+      // Tekstirivit
+      const textX = 190 * s;
+      const barH1 = 6 * s;
+      const barH2 = 5 * s;
+
+      // Päärivin palkki
+      ctx.fillStyle = row.checked ? 'rgba(102,102,102,0.5)' : 'rgba(232,228,220,0.8)';
+      const w1 = (160 + Math.random() * 80) * s;
+      ctx.beginPath();
+      ctx.roundRect(textX, cy - 8 * s, w1, barH1, 3 * s);
+      ctx.fill();
+
+      // Alarivin palkki
+      ctx.fillStyle = row.checked ? 'rgba(102,102,102,0.3)' : 'rgba(102,102,102,1)';
+      const w2 = (80 + Math.random() * 60) * s;
+      ctx.beginPath();
+      ctx.roundRect(textX, cy + 6 * s, w2, barH2, 2.5 * s);
+      ctx.fill();
+    });
+
+    return c.toDataURL('image/png');
+  }
+
+  const icon192 = generateIcon(192);
+  const icon512 = generateIcon(512);
+
+  // Apple touch icon
+  const appleLink = document.getElementById('appleTouchIcon');
+  if (appleLink) appleLink.href = icon192;
+
+  // Web App Manifest
+  const manifest = {
+    name: 'Todo',
+    short_name: 'Todo',
+    description: 'Tehtävälista',
+    start_url: location.href,
+    display: 'standalone',
+    background_color: '#0f0f0f',
+    theme_color: '#0f0f0f',
+    icons: [
+      { src: icon192, sizes: '192x192', type: 'image/png' },
+      { src: icon512, sizes: '512x512', type: 'image/png' }
+    ]
+  };
+
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = URL.createObjectURL(blob);
+  document.head.appendChild(link);
+})();
 </script>
 </body>
 </html>
