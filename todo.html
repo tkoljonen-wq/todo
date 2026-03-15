@@ -204,7 +204,68 @@ header .date { color: var(--muted); font-size: 12px; }
 .task-item.done .check-btn { background: var(--green); border-color: var(--green); color: #0a1a0f; }
 .check-btn:hover { border-color: var(--green); }
 
-.task-text { flex: 1; line-height: 1.5; word-break: break-word; }
+.task-text {
+  flex: 1; line-height: 1.5; word-break: break-word;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin: -1px -4px;
+  transition: background 0.15s;
+}
+.task-text:hover { background: var(--surface2); }
+.task-item.done .task-text:hover { background: transparent; cursor: default; }
+
+.task-text-edit {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--muted);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  outline: none;
+  resize: none;
+  line-height: 1.5;
+  min-height: 28px;
+  word-break: break-word;
+}
+
+.edit-meta-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+  margin-left: 27px;
+}
+.edit-meta-row input[type="date"],
+.edit-meta-row input[type="time"] {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+}
+.edit-meta-row input[type="date"]::-webkit-calendar-picker-indicator,
+.edit-meta-row input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
+
+.edit-save-btn, .edit-cancel-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  padding: 0.35rem 0.7rem;
+  border-radius: 3px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.edit-save-btn { background: var(--green); color: #0a1a0f; }
+.edit-cancel-btn { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.edit-save-btn:hover, .edit-cancel-btn:hover { opacity: 0.8; }
 
 .task-meta {
   display: flex;
@@ -322,6 +383,7 @@ header .date { color: var(--muted); font-size: 12px; }
 // ── DATA ──────────────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'todo_v2';
 let data = { civil: [], work: [] };
+let editingId = null; // track which task is being edited
 
 function load() {
   try {
@@ -347,7 +409,7 @@ function syncToSheets() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
     mode: 'no-cors'
-  }).catch(() => {}); // hiljaiset virheet - ei häiritä käyttäjää
+  }).catch(() => {});
 }
 
 // ── TEXTAREA ──────────────────────────────────────────────────────────────────
@@ -436,6 +498,46 @@ function resetForm() {
   document.getElementById('dueTimeInput').value = '';
 }
 
+// ── EDIT ──────────────────────────────────────────────────────────────────────
+function startEdit(list, id) {
+  const task = data[list].find(t => t.id === id);
+  if (!task || task.done) return;
+  editingId = id;
+  render();
+  // Focus the textarea after render
+  const textarea = document.querySelector('.task-text-edit');
+  if (textarea) {
+    textarea.focus();
+    textarea.selectionStart = textarea.value.length;
+  }
+}
+
+function cancelEdit() {
+  editingId = null;
+  render();
+}
+
+function saveEdit(list, id) {
+  const textarea = document.querySelector('.task-text-edit');
+  const dateInput = document.querySelector('.edit-date-input');
+  const timeInput = document.querySelector('.edit-time-input');
+  if (!textarea) return;
+
+  const newText = textarea.value.trim();
+  if (!newText) { showToast('Tehtävä ei voi olla tyhjä!'); return; }
+
+  const task = data[list].find(t => t.id === id);
+  if (task) {
+    task.text = newText;
+    task.due = dateInput ? dateInput.value : task.due;
+    task.dueTime = timeInput ? timeInput.value : task.dueTime;
+    save();
+    showToast('✏️ Tehtävä päivitetty');
+  }
+  editingId = null;
+  render();
+}
+
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function formatDue(task) {
   if (!task.due) return null;
@@ -464,6 +566,7 @@ function renderList(name) {
   container.innerHTML = '';
 
   tasks.forEach(task => {
+    const isEditing = editingId === task.id;
     const item = document.createElement('div');
     item.className = 'task-item ' + name + '-item' + (task.done ? ' done' : '');
 
@@ -473,40 +576,102 @@ function renderList(name) {
     const check = document.createElement('button');
     check.className = 'check-btn';
     check.textContent = task.done ? '✓' : '';
-    check.addEventListener('click', () => toggleDone(name, task.id));
+    check.addEventListener('click', () => { if (!isEditing) toggleDone(name, task.id); });
 
-    const textEl = document.createElement('span');
-    textEl.className = 'task-text';
-    textEl.textContent = task.text;
+    if (isEditing) {
+      // ── Edit mode ──
+      const textarea = document.createElement('textarea');
+      textarea.className = 'task-text-edit';
+      textarea.value = task.text;
+      textarea.rows = 1;
+      textarea.addEventListener('input', () => {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+      });
+      textarea.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit(name, task.id); }
+        if (e.key === 'Escape') cancelEdit();
+      });
 
-    const del = document.createElement('button');
-    del.className = 'delete-btn';
-    del.textContent = '×';
-    del.addEventListener('click', () => deleteTask(name, task.id));
+      top.appendChild(check);
+      top.appendChild(textarea);
+      item.appendChild(top);
 
-    top.appendChild(check);
-    top.appendChild(textEl);
-    item.appendChild(top);
-    item.appendChild(del);
+      // Edit meta row (date, time, save, cancel)
+      const editMeta = document.createElement('div');
+      editMeta.className = 'edit-meta-row';
 
-    if (task.due) {
-      const meta = document.createElement('div');
-      meta.className = 'task-meta';
+      const dateInput = document.createElement('input');
+      dateInput.type = 'date';
+      dateInput.className = 'edit-date-input';
+      dateInput.value = task.due || '';
+      editMeta.appendChild(dateInput);
 
-      const d = formatDue(task);
-      if (d) {
-        const dueEl = document.createElement('span');
-        dueEl.className = d.cls;
-        dueEl.textContent = d.text;
-        meta.appendChild(dueEl);
+      const timeInput = document.createElement('input');
+      timeInput.type = 'time';
+      timeInput.className = 'edit-time-input';
+      timeInput.value = task.dueTime || '';
+      editMeta.appendChild(timeInput);
+
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'edit-save-btn';
+      saveBtn.textContent = '✓ Tallenna';
+      saveBtn.addEventListener('click', () => saveEdit(name, task.id));
+      editMeta.appendChild(saveBtn);
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'edit-cancel-btn';
+      cancelBtn.textContent = '✕ Peruuta';
+      cancelBtn.addEventListener('click', cancelEdit);
+      editMeta.appendChild(cancelBtn);
+
+      item.appendChild(editMeta);
+
+      // Auto-resize textarea after append
+      requestAnimationFrame(() => {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+      });
+
+    } else {
+      // ── Normal mode ──
+      const textEl = document.createElement('span');
+      textEl.className = 'task-text';
+      textEl.textContent = task.text;
+      if (!task.done) {
+        textEl.title = 'Klikkaa muokataksesi';
+        textEl.addEventListener('click', () => startEdit(name, task.id));
       }
 
-      const calBtn = document.createElement('button');
-      calBtn.className = 'cal-btn';
-      calBtn.textContent = '📅 Kalenteriin';
-      calBtn.addEventListener('click', e => { e.stopPropagation(); addToGoogleCalendar(task); });
-      meta.appendChild(calBtn);
-      item.appendChild(meta);
+      const del = document.createElement('button');
+      del.className = 'delete-btn';
+      del.textContent = '×';
+      del.addEventListener('click', () => deleteTask(name, task.id));
+
+      top.appendChild(check);
+      top.appendChild(textEl);
+      item.appendChild(top);
+      item.appendChild(del);
+
+      if (task.due) {
+        const meta = document.createElement('div');
+        meta.className = 'task-meta';
+
+        const d = formatDue(task);
+        if (d) {
+          const dueEl = document.createElement('span');
+          dueEl.className = d.cls;
+          dueEl.textContent = d.text;
+          meta.appendChild(dueEl);
+        }
+
+        const calBtn = document.createElement('button');
+        calBtn.className = 'cal-btn';
+        calBtn.textContent = '📅 Kalenteriin';
+        calBtn.addEventListener('click', e => { e.stopPropagation(); addToGoogleCalendar(task); });
+        meta.appendChild(calBtn);
+        item.appendChild(meta);
+      }
     }
 
     container.appendChild(item);
@@ -549,8 +714,6 @@ function addToGoogleCalendar(task) {
   const url = 'https://www.google.com/calendar/render?action=TEMPLATE'
     + '&text=' + encodeURIComponent(task.text)
     + '&dates=' + dates;
-
-  // Open in new tab so Todo stays open
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
