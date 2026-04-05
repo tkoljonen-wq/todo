@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="76" fill="#0f0f0f"/>
+  <rect x="52" y="52" width="408" height="408" rx="52" fill="#1a1a1a"/>
+  <!-- List lines -->
+  <rect x="148" y="154" width="216" height="22" rx="11" fill="#e8e4dc" opacity="0.15"/>
+  <rect x="148" y="208" width="172" height="22" rx="11" fill="#e8e4dc" opacity="0.15"/>
+  <rect x="148" y="282" width="216" height="22" rx="11" fill="#e8e4dc" opacity="0.15"/>
+  <rect x="148" y="336" width="128" height="22" rx="11" fill="#e8e4dc" opacity="0.15"/>
+  <!-- Check circle - work color -->
+  <circle cx="108" cy="165" r="28" fill="none" stroke="#c8a96e" stroke-width="7"/>
+  <path d="M91 165 l11 11 l22 -22" stroke="#c8a96e" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Check circle - civil color (filled) -->
+  <circle cx="108" cy="293" r="28" fill="#6e9ec8"/>
+  <path d="M91 293 l11 11 l22 -22" stroke="#0a1a2a" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
