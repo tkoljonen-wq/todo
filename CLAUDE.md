@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-This is a single-file PWA todo app. Everything lives in two files:
+This is a single-file PWA todo app, served from GitHub Pages (repo: tkoljonen-wq/todo). Everything lives in two files:
 
 - **`index.html`** — the entire app: HTML structure, CSS styles, and JavaScript logic all inline
 - **`sw.js`** — service worker for offline caching (network first, cache fallback)
@@ -24,7 +24,7 @@ On every save, data is also POSTed to a Google Apps Script URL (`APPS_SCRIPT_URL
 - **DATA** — `load()`, `save()`, `syncToSheets()`
 - **VOICE** — Web Speech API (Finnish `fi-FI`), push-to-talk via `startMic`/`stopMic`
 - **SAVE** — `saveTask(list)` adds to `data[list]`
-- **EDIT** — `startEdit`, `saveEdit`, `cancelEdit` with `editingId` global tracking the active edit
+- **EDIT** — `startEdit`, `saveEdit`, `cancelEdit` with `editingId` global tracking the active edit; `commitPendingEdit()` auto-saves an in-progress edit before any other action re-renders
 - **RENDER** — `renderList(name)` rebuilds the DOM for one column; `render()` calls both
 - **TASK ACTIONS** — `toggleDone`, `deleteTask`, `clearDone`
 - **GOOGLE CALENDAR** — `addToGoogleCalendar(task)` opens Google Calendar new-event URL
