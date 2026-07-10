@@ -2,7 +2,7 @@
 <html lang="fi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Todo</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f0f0f">
@@ -492,6 +492,7 @@ document.getElementById('saveWorkBtn').addEventListener('click',  () => saveTask
 function saveTask(list) {
   const text = taskInput.value.trim();
   if (!text) { taskInput.focus(); showToast('Kirjoita ensin tehtävä!'); return; }
+  commitPendingEdit();
   data[list].unshift({
     id:      Date.now().toString(36) + Math.random().toString(36).slice(2,5),
     text,
@@ -512,9 +513,27 @@ function resetForm() {
 }
 
 // ── EDIT ──────────────────────────────────────────────────────────────────────
+// Save an in-progress edit before another action re-renders and would discard it
+function commitPendingEdit() {
+  if (!editingId) return;
+  const textarea  = document.querySelector('.task-text-edit');
+  const dateInput = document.querySelector('.edit-date-input');
+  const timeInput = document.querySelector('.edit-time-input');
+  const task = data.civil.find(t => t.id === editingId) || data.work.find(t => t.id === editingId);
+  if (task && textarea) {
+    const newText = textarea.value.trim();
+    if (newText) task.text = newText;
+    if (dateInput) task.due = dateInput.value;
+    if (timeInput) task.dueTime = timeInput.value;
+    save();
+  }
+  editingId = null;
+}
+
 function startEdit(list, id) {
   const task = data[list].find(t => t.id === id);
   if (!task || task.done) return;
+  if (editingId && editingId !== id) commitPendingEdit();
   editingId = id;
   render();
   // Focus the textarea after render
@@ -695,16 +714,20 @@ function render() { renderList('civil'); renderList('work'); }
 
 // ── TASK ACTIONS ──────────────────────────────────────────────────────────────
 function toggleDone(list, id) {
+  commitPendingEdit();
   const t = data[list].find(t => t.id === id);
   if (t) { t.done = !t.done; save(); render(); }
 }
 function deleteTask(list, id) {
+  if (editingId === id) editingId = null;
+  else commitPendingEdit();
   data[list] = data[list].filter(t => t.id !== id);
   save(); render();
 }
 function clearDone(list) {
+  commitPendingEdit();
   const n = data[list].filter(t => t.done).length;
-  if (!n) { showToast('Ei valmiita tehtäviä'); return; }
+  if (!n) { showToast('Ei valmiita tehtäviä'); render(); return; }
   data[list] = data[list].filter(t => !t.done);
   save(); render();
   showToast('🗑️ Poistettu ' + n + ' tehtävä' + (n > 1 ? 'ä' : ''));
