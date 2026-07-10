@@ -392,9 +392,10 @@ function load() {
   try {
     const s = localStorage.getItem(STORAGE_KEY);
     if (s) data = JSON.parse(s);
-    if (!data.civil) data.civil = [];
-    if (!data.work)  data.work  = [];
   } catch(e) {}
+  if (!data || typeof data !== 'object') data = {};
+  if (!Array.isArray(data.civil)) data.civil = [];
+  if (!Array.isArray(data.work))  data.work  = [];
 }
 
 function save() {
@@ -432,6 +433,7 @@ taskInput.addEventListener('keydown', e => {
 const micBtn = document.getElementById('micBtn');
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let isListening = false;
+let rec = null;
 
 function resetMicUI() {
   isListening = false;
@@ -445,8 +447,13 @@ function startMic(e) {
   if (e) e.preventDefault();
   if (isListening) return;
   if (!SR) { showToast('⚠️ Puheentunnistus vaatii Chrome-selaimen'); return; }
+  // Kill any previous recognition still finalizing so it can't write to the field
+  if (rec) {
+    rec.onresult = null; rec.onend = null; rec.onerror = null;
+    try { rec.abort(); } catch(err) {}
+  }
   taskInput.value = '';
-  const rec = new SR();
+  rec = new SR();
   rec.lang = 'fi-FI';
   rec.interimResults = true;
   rec.continuous = false;
@@ -471,7 +478,10 @@ function startMic(e) {
   rec.start();
 }
 
-function stopMic() { resetMicUI(); }
+function stopMic() {
+  if (rec) { try { rec.stop(); } catch(err) {} } // stop listening, keep final result
+  resetMicUI();
+}
 
 if (!SR) { micBtn.style.opacity = '0.3'; micBtn.style.cursor = 'not-allowed'; }
 

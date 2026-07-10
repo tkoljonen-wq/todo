@@ -12,54 +12,13 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     fetch(e.request)
       .then(response => {
-        // Store a copy in cache for offline use
-        const clone = response.clone();
-        caches.open(CACHE).then(cache => cache.put(e.request, clone));
+        // Cache successful responses (opaque = cross-origin no-cors, e.g. fonts)
+        if (response.ok || response.type === 'opaque') {
+          const clone = response.clone();
+          caches.open(CACHE).then(cache => cache.put(e.request, clone)).catch(() => {});
+        }
         return response;
       })
       .catch(() => caches.match(e.request))
-  );
-});
-
-// ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
-self.addEventListener('message', e => {
-  if (e.data && e.data.type === 'SCHEDULE_NOTIFICATION') {
-    const { title, body, fireAt, tag } = e.data;
-    const delay = fireAt - Date.now();
-    if (delay < 0) return;
-    setTimeout(() => {
-      self.registration.showNotification(title, {
-        body,
-        tag,
-        icon: './icons/icon-192.svg',
-        badge: './icons/icon-192.svg',
-        vibrate: [200, 100, 200],
-        requireInteraction: true,
-        actions: [
-          { action: 'dismiss', title: '✓ Kuittaa' },
-          { action: 'snooze',  title: '💤 15 min' }
-        ]
-      });
-    }, delay);
-  }
-});
-
-self.addEventListener('notificationclick', e => {
-  e.notification.close();
-  if (e.action === 'snooze') {
-    setTimeout(() => {
-      self.registration.showNotification(e.notification.title, {
-        body: e.notification.body,
-        tag: e.notification.tag + '_snooze',
-        vibrate: [200, 100, 200],
-        requireInteraction: true,
-      });
-    }, 15 * 60 * 1000);
-  }
-  e.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then(clients => {
-      if (clients.length > 0) return clients[0].focus();
-      return self.clients.openWindow('./index.html');
-    })
   );
 });
